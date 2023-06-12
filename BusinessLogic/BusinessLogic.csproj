@@ -19,20 +19,10 @@
     </ItemGroup>
 
     <ItemGroup>
+      <Compile Remove="Entities\Task.cs" />
       <Compile Remove="Context\ES2DbContext.cs" />
       <Compile Remove="Entities\Author.cs" />
       <Compile Remove="Entities\Book.cs" />
-      <Compile Remove="Context\MyDbContext.cs" />
-      <Compile Remove="Entities\Client.cs" />
-      <Compile Remove="Entities\Freelancer.cs" />
-      <Compile Remove="Entities\Project.cs" />
-      <Compile Remove="Entities\Task.cs" />
-      <Compile Remove="Entities\User.cs" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <Folder Include="Context" />
-      <Folder Include="Entities" />
     </ItemGroup>
 
 </Project>
