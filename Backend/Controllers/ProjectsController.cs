@@ -9,9 +9,9 @@ namespace Backend.Controllers
     [ApiController]
     public class ProjectsController : ControllerBase
     {
-        private readonly MyDbContext _context;
+        private readonly TasksDbContext _context;
 
-        public ProjectsController(MyDbContext context)
+        public ProjectsController(TasksDbContext context)
         {
             _context = context;
         }

@@ -5,13 +5,13 @@ using Microsoft.EntityFrameworkCore;
 
 namespace BusinessLogic.Context;
 
-public partial class MyDbContext : DbContext
+public partial class TasksDbContext : DbContext
 {
-    public MyDbContext()
+    public TasksDbContext()
     {
     }
 
-    public MyDbContext(DbContextOptions<MyDbContext> options)
+    public TasksDbContext(DbContextOptions<TasksDbContext> options)
         : base(options)
     {
     }

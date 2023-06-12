@@ -22,4 +22,8 @@
       <ProjectReference Include="..\BusinessLogic\BusinessLogic.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Compile Remove="Controllers\InviteController.cs" />
+    </ItemGroup>
+
 </Project>

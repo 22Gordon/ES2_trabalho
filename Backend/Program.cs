@@ -11,7 +11,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 // Add default connection string for the Web API controllers
-builder.Services.AddDbContext<ES2DbContext>(options => 
+builder.Services.AddDbContext<TasksDbContext>(options => 
     options.UseNpgsql(builder.Configuration.GetConnectionString("DatabaseConnection"))
 );
 

@@ -18,11 +18,4 @@
       <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="7.0.4" />
     </ItemGroup>
 
-    <ItemGroup>
-      <Compile Remove="Entities\Task.cs" />
-      <Compile Remove="Context\ES2DbContext.cs" />
-      <Compile Remove="Entities\Author.cs" />
-      <Compile Remove="Entities\Book.cs" />
-    </ItemGroup>
-
 </Project>
