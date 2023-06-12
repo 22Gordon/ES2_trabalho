@@ -25,5 +25,5 @@ INSERT INTO invite (projectID, freelancerID)
 VALUES ('507d42fa-aa17-4478-ac2f-8ea8e31cd738', '8f6198b3-0760-4ab0-b1f4-6e79890d317a');
 
 -- Insert initial data into the task table  
-INSERT INTO task (projectID, freelancerID, startDate, endDate, priceHour)
+INSERT INTO user_task (projectID, freelancerID, startDate, endDate, priceHour)
 VALUES ('507d42fa-aa17-4478-ac2f-8ea8e31cd738', '8f6198b3-0760-4ab0-b1f4-6e79890d317a', '2023-06-01 09:00:00', '2023-06-01 17:00:00', 25.0);

@@ -43,6 +43,7 @@
       <None Update="docker\images\pg\migrations\003-create-tasks-table.sql">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </None>
+      <None Remove="docker\images\pg\migrations\005-create-special-table.sql" />
     </ItemGroup>
 
 </Project>

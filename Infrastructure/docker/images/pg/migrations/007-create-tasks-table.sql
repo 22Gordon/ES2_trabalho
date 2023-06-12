@@ -1,4 +1,4 @@
-CREATE TABLE task (
+CREATE TABLE user_task (
 taskID         uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
 projectID      uuid,
 freelancerID   uuid,
