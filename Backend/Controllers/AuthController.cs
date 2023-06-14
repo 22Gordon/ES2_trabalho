@@ -4,9 +4,8 @@ using System.Security.Claims;
 using System.Text;
 using BusinessLogic.Entities;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Configuration;
-using Microsoft.IdentityModel.Tokens;
 using BusinessLogic.Context;
+using Microsoft.IdentityModel.Tokens;
 
 namespace Backend.Controllers
 {
