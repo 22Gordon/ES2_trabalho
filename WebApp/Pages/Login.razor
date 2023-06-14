@@ -1,7 +1,6 @@
-@page "/"
+@page "/login"
 
 @inject NavigationManager NavigationManager
-
 
 <h3>Login</h3>
 
@@ -19,22 +18,24 @@
 
 <p><a href="#">Forgot Password?</a></p>
 
+<p>Don't have an account? <NavLink href="/register">Register</NavLink></p>
+
 @code {
     private string Username { get; set; }
     private string Password { get; set; }
 
     private void HandleLogin()
     {
-    // Lógica de autenticação
+        // Lógica de autenticação
         if (Username == "admin" && Password == "admin123")
         {
-    // Autenticação bem-sucedida, redirecionar para a página principal
+            // Autenticação bem-sucedida, redirecionar para a página principal
             NavigationManager.NavigateTo("/home");
         }
         else
         {
-    // Autenticação falhou, exibir mensagem de erro
-    // ...
+            // Autenticação falhou, exibir mensagem de erro
+            // ...
         }
     }
 }
