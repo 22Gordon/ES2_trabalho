@@ -1,5 +1,7 @@
 @page "/register"
-
+@using Microsoft.AspNetCore.Components
+@using BusinessLogic.Entities
+@inject HttpClient HttpClient
 @inject NavigationManager NavigationManager
 
 <h3>Register</h3>
@@ -38,6 +40,8 @@
 
 <p>Already have an account? <NavLink href="/login">Login</NavLink></p>
 
+
+
 @code {
     private string DisplayName { get; set; }
     private string Username { get; set; }
@@ -45,7 +49,7 @@
     private string ConfirmPassword { get; set; }
     private string AccountType { get; set; }
 
-    private void HandleRegister()
+    private async Task HandleRegister()
     {
         // Validar os campos e realizar a lógica de registro
         if (Password != ConfirmPassword)
@@ -53,19 +57,39 @@
             // Exibir mensagem de erro de senhas diferentes
             return;
         }
-
-        // Lógica de registro e criação do usuário
-
-        if (AccountType == "client")
+        //Criar objeto User com os dados do formulário
+        var user = new User
         {
+            Userid = Guid.NewGuid(),
+            Displayname = DisplayName,
+            Username = Username,
+            Password = Password
+        };
+
+        // Lógica de registo e criação do usuário
+
+        switch (AccountType)
+        {
+            case "client":
             // Criar conta de cliente
-        }
-        else if (AccountType == "freelancer")
-        {
+                break;
+            case "freelancer":
             // Criar conta de freelancer
+                //Fazer solicitação HTTP para registar utilizador
+                var response = await HttpClient.PostAsJsonAsync("/api/Freelancers/Register", user);
+                if (response.IsSuccessStatusCode)
+                {
+                    NavigationManager.NavigateTo("/login");
+                }
+                else
+                {
+                 // Exibir mensagem de erro de registro
+                    // ...
+                }
+                break;
         }
 
         // Redirecionar para a página de login após o registro
-        NavigationManager.NavigateTo("/");
+        NavigationManager.NavigateTo("/login");
     }
 }
