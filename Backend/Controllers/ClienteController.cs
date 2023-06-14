@@ -106,7 +106,7 @@ namespace Backend.Controllers
         
         // POST: api/Clients/Register
         [HttpPost("Register")]
-        public async Task<IActionResult> RegisterClient([FromBody] User user)
+        public async Task<IActionResult> RegisterClient(User user)
         {
             // Crie um novo objeto User
             var newUser = new User
