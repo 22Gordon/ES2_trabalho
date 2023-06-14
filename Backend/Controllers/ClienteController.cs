@@ -103,5 +103,32 @@ namespace Backend.Controllers
         {
             return _context.Clients.Any(e => e.Userid == id);
         }
+        
+        // POST: api/Clients/Register
+        [HttpPost("Register")]
+        public async Task<IActionResult> RegisterClient([FromBody] User user)
+        {
+            // Crie um novo objeto User
+            var newUser = new User
+            {
+                Userid = user.Userid,
+                Displayname = user.Displayname,
+                Username = user.Username,
+                Password = user.Password
+            };
+
+            // Crie um novo objeto Client associado ao utilizadr
+            var client = new Client
+            {
+                User = newUser,
+                Userid = newUser.Userid
+            };
+
+            // Adicione o cliente e o utilizador ao contexto da BD
+            _context.Clients.Add(client);
+            await _context.SaveChangesAsync();
+
+            return CreatedAtAction("GetClient", new { id = client.Userid }, client);
+        }
     }
 }

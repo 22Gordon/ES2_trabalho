@@ -9,9 +9,9 @@ namespace Backend.Controllers
     [ApiController]
     public class UserTasksController : ControllerBase
     {
-        private readonly MyDbContext _context;
+        private readonly TasksDbContext _context;
 
-        public UserTasksController(MyDbContext context)
+        public UserTasksController(TasksDbContext context)
         {
             _context = context;
         }
