@@ -22,13 +22,29 @@
     <input id="username" type="text" class="form-control" @bind="@User.Username" />
 </div>
 
-<button class="btn btn-primary" @onclick="UpdateProfile">Save</button>
+<button class="btn btn-primary" @onclick="UpdateProfile">Save Profile</button>
+
+<h3>Change Password</h3>
+
+<div class="form-group">
+    <label for="currentPassword">Current Password:</label>
+    <input id="currentPassword" type="password" class="form-control" @bind="@CurrentPassword" />
+</div>
+
+<div class="form-group">
+    <label for="newPassword">New Password:</label>
+    <input id="newPassword" type="password" class="form-control" @bind="@NewPassword" />
+</div>
+
+<button class="btn btn-primary" @onclick="UpdatePassword">Change Password</button>
 
 <p><a href="/home">Back to Home</a></p>
 
 @code {
     private UserEdit User { get; set; } = new UserEdit();
     private Guid UserId { get; set; }
+    private string CurrentPassword { get; set; }
+    private string NewPassword { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
@@ -89,6 +105,38 @@
             }
         }
     }
+    
+    private async Task UpdatePassword()
+    {
+        var token = await JsRuntime.InvokeAsync<string>("localStorage.getItem", "token");
+        if (!string.IsNullOrEmpty(token))
+        {
+            // Descodificar token
+            var jwtHandler = new JwtSecurityTokenHandler();
+            var jwtToken = jwtHandler.ReadJwtToken(token);
 
+            // Obter as informações do utilizador do token 
+            var username = jwtToken.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value;
 
+            // Construir o objeto para enviar a solicitação HTTP
+            var passwordUpdateModel = new PasswordUpdateModel
+            {
+                CurrentPassword = CurrentPassword,
+                NewPassword = NewPassword
+            };
+
+            // Fazer solicitação HTTP para atualizar a senha do utilizador
+            var response = await HttpClient.PutAsJsonAsync($"http://localhost:5052/api/Users/changepassword/{username}", passwordUpdateModel);
+
+            if (response.IsSuccessStatusCode)
+            {
+                // Atualização da senha bem-sucedida
+                NavigationManager.NavigateTo("/home");
+            }
+            else
+            {
+                // Atualização da senha falhou, exibir mensagem de erro
+            }
+        }
+    }
 }

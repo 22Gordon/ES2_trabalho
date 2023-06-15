@@ -48,7 +48,7 @@ namespace Backend.Controllers
 
             if (existingUser == null)
             {
-                // Usuário não encontrado
+                // Utilizador não encontrado
                 throw new ArgumentException("Invalid user");
             }
 

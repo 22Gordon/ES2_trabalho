@@ -135,5 +135,28 @@ namespace Backend.Controllers
         {
             return _context.Users.Any(e => e.Userid == id);
         }
+        
+        [HttpPut("changepassword/{username}")]
+        public async Task<IActionResult> ChangePassword(string username, [FromBody] PasswordUpdateModel model)
+        {
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Username == username);
+
+            if (user == null)
+            {
+                return NotFound();
+            }
+
+            // Verificar se a senha atual fornecida está correta
+            if (user.Password != model.CurrentPassword)
+            {
+                return BadRequest("Invalid current password");
+            }
+
+            // Atualizar a senha do utilizador
+            user.Password = model.NewPassword;
+            await _context.SaveChangesAsync();
+
+            return Ok();
+        }
     }
 }
