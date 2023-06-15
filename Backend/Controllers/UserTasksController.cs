@@ -10,7 +10,7 @@ namespace Backend.Controllers
     public class UserTasksController : ControllerBase
     {
         private readonly TasksDbContext _context;
-
+        
         public UserTasksController(TasksDbContext context)
         {
             _context = context;
@@ -62,13 +62,24 @@ namespace Backend.Controllers
         
         // POST api/usertasks
         // Creates a db entity of a UserTask
+        // POST api/usertasks
         [HttpPost]
-        public IActionResult CreateUserTask(UserTask task)
+        public IActionResult CreateUserTask(UserTask userTask)
         {
-            _context.UserTasks.Add(task);
-            _context.SaveChanges();
-            return CreatedAtAction(nameof(GetUserTaskById), new { id = task.Taskid }, task);
+            try
+            {
+                _context.UserTasks.Add(userTask);
+                _context.SaveChanges();
+
+                return CreatedAtAction(nameof(GetUserTaskById), new { id = userTask.Taskid }, userTask);
+            }
+            catch (Exception ex)
+            {
+                // Handle any exceptions that occur during the database operation
+                return StatusCode(500, "An error occurred while saving the UserTask.");
+            }
         }
+
         
         // DELETE api/usertasks/{id}
         // Deletes an entity from the database
@@ -84,6 +95,19 @@ namespace Backend.Controllers
             _context.UserTasks.Remove(task);
             _context.SaveChanges();
             return NoContent();
+        }
+        
+        
+        // GET api/usertasks/{d1}&{d2}
+        // Selects a list of tasks between two dates
+        [HttpGet("{start_date}&{end_date}")]
+        public IActionResult GetTasksByDateRange(DateTime start_date, DateTime end_date)
+        {
+            var tasks = _context.UserTasks
+                .Where(t => t.Startdate >= start_date && t.Enddate <= end_date)
+                .ToList();
+
+            return Ok(tasks);
         }
     }
 }

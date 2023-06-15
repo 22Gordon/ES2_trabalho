@@ -22,23 +22,39 @@ namespace Backend.Controllers
 
         // GET: api/Freelancers
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Freelancer>>> GetFreelancers()
+        public async Task<ActionResult<IEnumerable<dynamic>>> GetFreelancers()
         {
-            return await _context.Freelancers.ToListAsync();
+            return await _context.Freelancers.Select(f => new
+            {
+                f.User.Userid,
+                f.User.Displayname,
+                f.User.Username,
+                f.User.Password
+            }).ToListAsync();
         }
 
         // GET: api/Freelancers/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<Freelancer>> GetFreelancer(Guid id)
+        public async Task<ActionResult<dynamic>> GetFreelancer(Guid id)
         {
-            var freelancer = await _context.Freelancers.FindAsync(id);
+            var freelancer = await _context.Freelancers
+                .Include(f => f.User)
+                .FirstOrDefaultAsync(f => f.Userid==id);
 
             if (freelancer == null)
             {
                 return NotFound();
             }
+            
+            var f = new
+            {
+                freelancer.User?.Userid,
+                freelancer.User?.Displayname,
+                freelancer.User?.Username,
+                freelancer.User?.Password
+            };
 
-            return freelancer;
+            return f;
         }
 
         // PUT: api/Freelancers/5
