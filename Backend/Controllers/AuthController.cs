@@ -1,21 +1,25 @@
+using System;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using BusinessLogic.Entities;
 using Microsoft.AspNetCore.Mvc;
+using BusinessLogic.Context;
 using Microsoft.IdentityModel.Tokens;
 
 namespace Backend.Controllers
 {
-    [Microsoft.AspNetCore.Components.Route("api/[controller]")]
+    [Route("api/[controller]")]
     [ApiController]
     public class AuthController : ControllerBase
     {
         private readonly IConfiguration _configuration;
+        private readonly TasksDbContext _context;
 
-        public AuthController(IConfiguration configuration)
+        public AuthController(IConfiguration configuration, TasksDbContext context)
         {
             _configuration = configuration;
+            _context = context;
         }
 
         [HttpPost("token")]
@@ -30,9 +34,10 @@ namespace Backend.Controllers
             return Unauthorized();
         }
 
-        private static bool IsValidUser(User user)
+        private bool IsValidUser(User user)
         {
-            return user?.Username == "es2" && user?.Password == "es2";
+            var existingUser = _context.Users.FirstOrDefault(u => u.Username == user.Username && u.Password == user.Password);
+            return existingUser != null;
         }
 
         private string GenerateJwtToken(string username)
@@ -58,4 +63,3 @@ namespace Backend.Controllers
         }
     }
 }
-

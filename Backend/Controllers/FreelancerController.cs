@@ -119,5 +119,33 @@ namespace Backend.Controllers
         {
             return _context.Freelancers.Any(e => e.Userid == id);
         }
-    }
+        
+        // POST: api/Freelancers/Register
+        [HttpPost("Register")]
+        public async Task<IActionResult> RegisterFreelancer(User user)
+        {
+            // Crie um novo objeto User
+            var newUser = new User
+            {
+                Userid = user.Userid,
+                Displayname = user.Displayname,
+                Username = user.Username,
+                Password = user.Password
+            };
+
+            // Crie um novo objeto Freelancer associado ao utilizadr
+            var freelancer = new Freelancer
+            {
+                User = newUser,
+                Userid = newUser.Userid,
+                Dailyavghours = 0
+            };
+
+            // Adicione o freelancer e o utilizador ao contexto da BD
+            _context.Freelancers.Add(freelancer);
+            await _context.SaveChangesAsync();
+
+            return CreatedAtAction("GetFreelancer", new { id = freelancer.Userid }, freelancer);
+        }
+    } 
 }
