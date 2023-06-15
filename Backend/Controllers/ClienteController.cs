@@ -122,7 +122,7 @@ namespace Backend.Controllers
                 Password = user.Password
             };
 
-            // Crie um novo objeto Client associado ao utilizadr
+            // Crie um novo objeto Client associado ao utilizador
             var client = new Client
             {
                 User = newUser

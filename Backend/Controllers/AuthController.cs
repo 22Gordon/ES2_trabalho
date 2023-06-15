@@ -44,9 +44,18 @@ namespace Backend.Controllers
 
         private string GenerateJwtToken(string username)
         {
+            var existingUser = _context.Users.FirstOrDefault(u => u.Username == username);
+
+            if (existingUser == null)
+            {
+                // Usuário não encontrado
+                throw new ArgumentException("Invalid user");
+            }
+
             var claims = new[]
             {
-                new Claim(ClaimTypes.Name, username)
+                new Claim(ClaimTypes.Name, username),
+                new Claim("userId", existingUser.Userid.ToString())
             };
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["JwtSettings:SecretKey"]));
@@ -63,5 +72,7 @@ namespace Backend.Controllers
 
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
+
+
     }
 }

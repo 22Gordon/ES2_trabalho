@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using BusinessLogic.Context;
 using BusinessLogic.Entities;
+using BusinessLogic.Models;
 
 namespace Backend.Controllers
 {
@@ -27,18 +28,6 @@ namespace Backend.Controllers
             return await _context.Users.ToListAsync();
         }
         
-        // GET user por username
-        [HttpGet("username/{username}")]
-        public IActionResult GetUserByUsername(string username)
-        {
-            var user = _context.Users.FirstOrDefault(u => u.Username == username);
-            if (user == null)
-            {
-                return NotFound();
-            }
-
-            return Ok(user);
-        }
 
         // GET: api/Users/5
         [HttpGet("{id}")]
@@ -55,7 +44,6 @@ namespace Backend.Controllers
         }
 
         // PUT: api/Users/5
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
         public async Task<IActionResult> PutUser(Guid id, User user)
         {
@@ -84,9 +72,40 @@ namespace Backend.Controllers
 
             return NoContent();
         }
+        
+        // PUT: api/Users/edit/{username}
+        [HttpPut("edit/{username}")]
+        public async Task<IActionResult> PutUserProfile(string username, UserEdit userEdit)
+        {
+            var existingUser = await _context.Users.FirstOrDefaultAsync(u => u.Username == username);
+            if (existingUser == null)
+            {
+                return NotFound();
+            }
+
+            existingUser.Displayname = userEdit.Displayname;
+            existingUser.Username = userEdit.Username;
+
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!UserExists(existingUser.Userid))
+                {
+                    return NotFound();
+                }
+                else
+                {
+                    throw;
+                }
+            }
+
+            return NoContent();
+        }
 
         // POST: api/Users
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
         public async Task<ActionResult<User>> PostUser(User user)
         {

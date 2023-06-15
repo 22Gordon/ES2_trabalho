@@ -2,6 +2,7 @@
 @using BusinessLogic.Entities
 @using System.IdentityModel.Tokens.Jwt
 @using System.Security.Claims
+@using BusinessLogic.Models
 @layout MainLayout
 @inject NavigationManager NavigationManager
 @inject IJSRuntime JsRuntime
@@ -26,7 +27,8 @@
 <p><a href="/home">Back to Home</a></p>
 
 @code {
-    private User User { get; set; } = new User();
+    private UserEdit User { get; set; } = new UserEdit();
+    private Guid UserId { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
@@ -38,51 +40,55 @@
         var token = await JsRuntime.InvokeAsync<string>("localStorage.getItem", "token");
         if (!string.IsNullOrEmpty(token))
         {
-            // Decodificar o token JWT
+            // Descodificar o token
             var jwtHandler = new JwtSecurityTokenHandler();
             var jwtToken = jwtHandler.ReadJwtToken(token);
 
-            // Obter as informações do usuário do token decodificado
-            var username = jwtToken.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value;
-
-            // Fazer solicitação HTTP para obter o perfil do usuário
-            var response = await HttpClient.GetAsync($"http://localhost:5052/api/Users/username/{username}");
-
-            if (response.IsSuccessStatusCode)
+            // Obter o ID do utilizador do token
+            var userIdClaim = jwtToken.Claims.FirstOrDefault(c => c.Type == "userId");
+            if (userIdClaim != null && Guid.TryParse(userIdClaim.Value, out Guid userId))
             {
-                User = await response.Content.ReadFromJsonAsync<User>();
+                UserId = userId;
 
-                // Atualizar as propriedades do usuário para refletir os valores obtidos do backend
-                User.Displayname = User.Displayname ?? string.Empty;
-                User.Username = User.Username ?? string.Empty;
+             // Fazer solicitação HTTP para obter o perfil do utilizador
+                var response = await HttpClient.GetAsync($"http://localhost:5052/api/Users/{UserId}");
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var userProfile = await response.Content.ReadFromJsonAsync<User>();
+                    User.Displayname = userProfile?.Displayname ?? string.Empty;
+                    User.Username = userProfile?.Username ?? string.Empty;
+                }
             }
         }
     }
-
+    
     private async Task UpdateProfile()
     {
         var token = await JsRuntime.InvokeAsync<string>("localStorage.getItem", "token");
         if (!string.IsNullOrEmpty(token))
         {
-            // Decodificar o token JWT
+            // Descodificar token
             var jwtHandler = new JwtSecurityTokenHandler();
             var jwtToken = jwtHandler.ReadJwtToken(token);
 
-            // Obter as informações do usuário do token decodificado
+            // Obter as informações do utilizador do token 
             var username = jwtToken.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value;
 
-            // Fazer solicitação HTTP para atualizar o perfil do usuário
-            var response = await HttpClient.PutAsJsonAsync($"http://localhost:5052/api/Users/{username}", User);
+            // Fazer solicitação HTTP para atualizar o perfil do utilizador
+            var response = await HttpClient.PutAsJsonAsync($"http://localhost:5052/api/Users/edit/{username}", User);
 
             if (response.IsSuccessStatusCode)
             {
-                // Atualização do perfil bem-sucedida
+            // Atualização do perfil bem-sucedida
                 NavigationManager.NavigateTo("/home");
             }
             else
             {
-                // Atualização do perfil falhou, exibir mensagem de erro
+            // Atualização do perfil falhou, exibir mensagem de erro
             }
         }
     }
+
+
 }
