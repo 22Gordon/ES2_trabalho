@@ -10,4 +10,6 @@ public partial class Client
     public virtual ICollection<Project> Projects { get; set; } = new List<Project>();
 
     public virtual User User { get; set; } = null!;
+
+    public virtual ICollection<UserTask> UserTasks { get; set; } = new List<UserTask>();
 }

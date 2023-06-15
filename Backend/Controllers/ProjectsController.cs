@@ -21,23 +21,7 @@ namespace Backend.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<dynamic>>> getProjects()
         {
-            return await _context.Projects.Select(p => new
-            {
-                p.Projectid,
-                p.Name,
-                p.Pricehour,
-                Client = new
-                {
-                    p.Client.Userid
-                },
-                Projectleader = new
-                {
-                    p.Projectleader.Userid,
-                    p.Projectleader.Dailyavghours
-                },
-                p.Freelancers,
-                p.UserTasks
-            }).ToListAsync();
+            return await _context.Projects.ToListAsync();
         }
         
         // GET api/projects/{id}
@@ -46,6 +30,22 @@ namespace Backend.Controllers
         public IActionResult GetProjectById(Guid id)
         {
             var project = _context.Projects.FirstOrDefault(p => p.Projectid == id);
+            if (project == null)
+            {
+                return NotFound();
+            }
+            return Ok(project);
+        }
+        
+        // GET api/projects/user/{id}
+        // List specific project, based on id
+        [HttpGet("user/{id}")]
+        public IActionResult GetProjectByUser(Guid id)
+        {
+            var project = _context.Projects
+                .Include(p => p.Projectleader)
+                .Include(p => p.Client)
+                .FirstOrDefault(p => p.Projectleaderid == id || p.Clientid == id);
             if (project == null)
             {
                 return NotFound();

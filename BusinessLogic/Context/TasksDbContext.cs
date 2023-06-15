@@ -143,23 +143,42 @@ public partial class TasksDbContext : DbContext
             entity.Property(e => e.Taskid)
                 .HasDefaultValueSql("uuid_generate_v4()")
                 .HasColumnName("taskid");
+            entity.Property(e => e.Clientid).HasColumnName("clientid");
             entity.Property(e => e.Enddate)
                 .HasColumnType("timestamp without time zone")
                 .HasColumnName("enddate");
             entity.Property(e => e.Freelancerid).HasColumnName("freelancerid");
             entity.Property(e => e.Pricehour).HasColumnName("pricehour");
-            entity.Property(e => e.Projectid).HasColumnName("projectid");
             entity.Property(e => e.Startdate)
                 .HasColumnType("timestamp without time zone")
                 .HasColumnName("startdate");
+
+            entity.HasOne(d => d.Client).WithMany(p => p.UserTasks)
+                .HasForeignKey(d => d.Clientid)
+                .HasConstraintName("user_task_clientid_fkey");
 
             entity.HasOne(d => d.Freelancer).WithMany(p => p.UserTasks)
                 .HasForeignKey(d => d.Freelancerid)
                 .HasConstraintName("user_task_freelancerid_fkey");
 
-            entity.HasOne(d => d.Project).WithMany(p => p.UserTasks)
-                .HasForeignKey(d => d.Projectid)
-                .HasConstraintName("user_task_projectid_fkey");
+            entity.HasMany(d => d.Projects).WithMany(p => p.Tasks)
+                .UsingEntity<Dictionary<string, object>>(
+                    "Taskproject",
+                    r => r.HasOne<Project>().WithMany()
+                        .HasForeignKey("Projectid")
+                        .OnDelete(DeleteBehavior.ClientSetNull)
+                        .HasConstraintName("taskproject_projectid_fkey"),
+                    l => l.HasOne<UserTask>().WithMany()
+                        .HasForeignKey("Taskid")
+                        .OnDelete(DeleteBehavior.ClientSetNull)
+                        .HasConstraintName("taskproject_taskid_fkey"),
+                    j =>
+                    {
+                        j.HasKey("Taskid", "Projectid").HasName("taskproject_pkey");
+                        j.ToTable("taskproject");
+                        j.IndexerProperty<Guid>("Taskid").HasColumnName("taskid");
+                        j.IndexerProperty<Guid>("Projectid").HasColumnName("projectid");
+                    });
         });
 
         OnModelCreatingPartial(modelBuilder);

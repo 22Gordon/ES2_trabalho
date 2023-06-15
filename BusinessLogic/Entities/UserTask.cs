@@ -7,9 +7,9 @@ public partial class UserTask
 {
     public Guid Taskid { get; set; }
 
-    public Guid? Projectid { get; set; }
-
     public Guid? Freelancerid { get; set; }
+
+    public Guid? Clientid { get; set; }
 
     public DateTime? Startdate { get; set; }
 
@@ -17,7 +17,9 @@ public partial class UserTask
 
     public double? Pricehour { get; set; }
 
+    public virtual Client? Client { get; set; }
+
     public virtual Freelancer? Freelancer { get; set; }
 
-    public virtual Project? Project { get; set; }
+    public virtual ICollection<Project> Projects { get; set; } = new List<Project>();
 }

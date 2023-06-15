@@ -50,7 +50,7 @@ namespace Backend.Controllers
             }
 
             // Update task properties
-            task.Projectid = updatedTask.Projectid;
+            task.Clientid = updatedTask.Clientid;
             task.Freelancerid = updatedTask.Freelancerid;
             task.Startdate = updatedTask.Startdate;
             task.Enddate = updatedTask.Enddate;
