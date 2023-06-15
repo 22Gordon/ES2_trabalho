@@ -1,12 +1,12 @@
 @page "/register"
 @using Microsoft.AspNetCore.Components
 @using BusinessLogic.Entities
+@using BusinessLogic.Models
 @inject HttpClient HttpClient
 @inject NavigationManager NavigationManager
 
 <h3>Register</h3>
 
-<form>
     <div class="form-group">
         <label for="displayname">Name:</label>
         <input id="displayname" type="text" class="form-control" @bind="@DisplayName" />
@@ -36,9 +36,15 @@
     </div>
 
     <button class="btn btn-primary" @onclick="HandleRegister">Register</button>
-</form>
 
 <p>Already have an account? <NavLink href="/login">Login</NavLink></p>
+
+<!-- Exibição dos valores das variáveis -->
+<p>DisplayName: @DisplayName</p>
+<p>Username: @Username</p>
+<p>Password: @Password</p>
+<p>ConfirmPassword: @ConfirmPassword</p>
+<p>AccountType: @AccountType</p>
 
 
 
@@ -58,10 +64,9 @@
             return;
         }
         //Criar objeto User com os dados do formulário
-        var user = new User
+        var user = new UserRegistrationModel()
         {
-            Userid = Guid.NewGuid(),
-            Displayname = DisplayName,
+            DisplayName = DisplayName,
             Username = Username,
             Password = Password
         };
@@ -72,24 +77,28 @@
         {
             case "client":
             // Criar conta de cliente
+                var response1 = await HttpClient.PostAsJsonAsync("http://localhost:5052/api/Clients/Register", user);
+                if (response1.IsSuccessStatusCode)
+                    NavigationManager.NavigateTo("/login");
+                {
+                    
+                      }
                 break;
             case "freelancer":
             // Criar conta de freelancer
                 //Fazer solicitação HTTP para registar utilizador
-                var response = await HttpClient.PostAsJsonAsync("/api/Freelancers/Register", user);
+                var response = await HttpClient.PostAsJsonAsync("http://localhost:5052/api/Freelancers/Register", user);
                 if (response.IsSuccessStatusCode)
                 {
                     NavigationManager.NavigateTo("/login");
                 }
                 else
                 {
-                 // Exibir mensagem de erro de registro
-                    // ...
                 }
                 break;
         }
 
-        // Redirecionar para a página de login após o registro
-        NavigationManager.NavigateTo("/login");
+        // Redirecionar para a página de login após o registo
+       // NavigationManager.NavigateTo("/login");
     }
 }

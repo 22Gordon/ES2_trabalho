@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using BusinessLogic.Context;
 using BusinessLogic.Entities;
+using BusinessLogic.Models;
 
 namespace Backend.Controllers
 {
@@ -106,13 +107,12 @@ namespace Backend.Controllers
         
         // POST: api/Freelancers/Register
         [HttpPost("Register")]
-        public async Task<IActionResult> RegisterFreelancer(User user)
+        public async Task<IActionResult> RegisterFreelancer(UserRegistrationModel user)
         {
             // Crie um novo objeto User
             var newUser = new User
             {
-                Userid = user.Userid,
-                Displayname = user.Displayname,
+                Displayname = user.DisplayName,
                 Username = user.Username,
                 Password = user.Password
             };
@@ -121,7 +121,6 @@ namespace Backend.Controllers
             var freelancer = new Freelancer
             {
                 User = newUser,
-                Userid = newUser.Userid,
                 Dailyavghours = 0
             };
 

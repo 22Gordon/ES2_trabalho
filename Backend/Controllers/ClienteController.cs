@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using BusinessLogic.Context;
 using BusinessLogic.Entities;
+using BusinessLogic.Models;
 
 namespace Backend.Controllers
 {
@@ -106,13 +107,12 @@ namespace Backend.Controllers
         
         // POST: api/Clients/Register
         [HttpPost("Register")]
-        public async Task<IActionResult> RegisterClient(User user)
+        public async Task<IActionResult> RegisterClient(UserRegistrationModel user)
         {
             // Crie um novo objeto User
             var newUser = new User
             {
-                Userid = user.Userid,
-                Displayname = user.Displayname,
+                Displayname = user.DisplayName,
                 Username = user.Username,
                 Password = user.Password
             };
@@ -120,8 +120,7 @@ namespace Backend.Controllers
             // Crie um novo objeto Client associado ao utilizadr
             var client = new Client
             {
-                User = newUser,
-                Userid = newUser.Userid
+                User = newUser
             };
 
             // Adicione o cliente e o utilizador ao contexto da BD
