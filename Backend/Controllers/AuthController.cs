@@ -5,6 +5,7 @@ using System.Text;
 using BusinessLogic.Entities;
 using Microsoft.AspNetCore.Mvc;
 using BusinessLogic.Context;
+using BusinessLogic.Models;
 using Microsoft.IdentityModel.Tokens;
 
 namespace Backend.Controllers
@@ -23,7 +24,7 @@ namespace Backend.Controllers
         }
 
         [HttpPost("token")]
-        public IActionResult GenerateToken([FromBody] User user)
+        public IActionResult GenerateToken([FromBody] LoginModel user)
         {
             if (IsValidUser(user))
             {
@@ -33,8 +34,9 @@ namespace Backend.Controllers
 
             return Unauthorized();
         }
+        
 
-        private bool IsValidUser(User user)
+        private bool IsValidUser(LoginModel user)
         {
             var existingUser = _context.Users.FirstOrDefault(u => u.Username == user.Username && u.Password == user.Password);
             return existingUser != null;

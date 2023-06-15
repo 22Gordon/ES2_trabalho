@@ -53,7 +53,7 @@
     private string Username { get; set; }
     private string Password { get; set; }
     private string ConfirmPassword { get; set; }
-    private string AccountType { get; set; }
+    private string AccountType { get; set; } = "client";
 
     private async Task HandleRegister()
     {
@@ -78,27 +78,16 @@
             case "client":
             // Criar conta de cliente
                 var response1 = await HttpClient.PostAsJsonAsync("http://localhost:5052/api/Clients/Register", user);
-                if (response1.IsSuccessStatusCode)
-                    NavigationManager.NavigateTo("/login");
-                {
-                    
-                      }
                 break;
             case "freelancer":
             // Criar conta de freelancer
                 //Fazer solicitação HTTP para registar utilizador
                 var response = await HttpClient.PostAsJsonAsync("http://localhost:5052/api/Freelancers/Register", user);
-                if (response.IsSuccessStatusCode)
-                {
-                    NavigationManager.NavigateTo("/login");
-                }
-                else
-                {
-                }
+     
                 break;
         }
 
         // Redirecionar para a página de login após o registo
-       // NavigationManager.NavigateTo("/login");
+        NavigationManager.NavigateTo("/login");
     }
 }

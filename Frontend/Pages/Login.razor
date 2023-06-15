@@ -1,6 +1,11 @@
 @page "/login"
+@using BusinessLogic.Entities
+@using BusinessLogic.Models
 
 @inject NavigationManager NavigationManager
+@inject HttpClient HttpClient
+@inject IJSRuntime JsRuntime
+
 <h3>Login</h3>
 
 <div class="form-group">
@@ -23,18 +28,34 @@
     private string Username { get; set; }
     private string Password { get; set; }
 
-    private void HandleLogin()
+    private async Task HandleLogin()
     {
-        // Lógica de autenticação
-        if (Username == "admin" && Password == "admin123")
+    // Criar loginModel object
+        var user = new LoginModel
         {
-            // Autenticação bem-sucedida, redirecionar para a página principal
+            Username = Username,
+            Password = Password
+        };
+
+    // HTTP para a logica do login
+        var response = await HttpClient.PostAsJsonAsync("http://localhost:5052/api/Auth/token", user);
+
+        if (response.IsSuccessStatusCode)
+        {
+    // Login com sucesso ir buscar o token gerado
+            var result = await response.Content.ReadFromJsonAsync<TokenResponse>();
+            var token = result.Token;
+
+    // Guardar o token no browsers localstorage
+            await JsRuntime.InvokeVoidAsync("localStorage.setItem", "token", token);
+
+    // Ir para a home page
             NavigationManager.NavigateTo("/home");
         }
         else
         {
-            // Autenticação falhou, exibir mensagem de erro
-            // ...
+    // Login failed, display an error message
+
         }
     }
 }
