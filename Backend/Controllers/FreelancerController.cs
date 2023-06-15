@@ -109,6 +109,11 @@ namespace Backend.Controllers
         [HttpPost("Register")]
         public async Task<IActionResult> RegisterFreelancer(UserRegistrationModel user)
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+            
             // Crie um novo objeto User
             var newUser = new User
             {

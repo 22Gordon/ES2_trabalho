@@ -10,7 +10,7 @@ builder.Services.AddSingleton<WeatherForecastService>();
 
 builder.Services.AddHttpClient("API", client =>
 {
-    client.BaseAddress = new Uri("http://localhost:5285/api/");
+    client.BaseAddress = new Uri("http://localhost:5052/api/");
 });
 
 var app = builder.Build();
