@@ -1,50 +1,88 @@
-﻿@page "/fetchdata"
-@using Frontend.Data
-@inject WeatherForecastService ForecastService
+﻿@page "/profile"
+@using BusinessLogic.Entities
+@using System.IdentityModel.Tokens.Jwt
+@using System.Security.Claims
+@layout MainLayout
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JsRuntime
+@inject HttpClient HttpClient
 
-<PageTitle>Weather forecast</PageTitle>
+<PageTitle>Profile</PageTitle>
 
-<h1>Weather forecast</h1>
+<h3>Profile</h3>
 
-<p>This component demonstrates fetching data from a service.</p>
+<div class="form-group">
+    <label for="displayName">Display Name:</label>
+    <input id="displayName" type="text" class="form-control" @bind="@User.Displayname" />
+</div>
 
-@if (forecasts == null)
-{
-    <p>
-        <em>Loading...</em>
-    </p>
-}
-else
-{
-    <table class="table">
-        <thead>
-        <tr>
-            <th>Date</th>
-            <th>Temp. (C)</th>
-            <th>Temp. (F)</th>
-            <th>Summary</th>
-        </tr>
-        </thead>
-        <tbody>
-        @foreach (var forecast in forecasts)
-        {
-            <tr>
-                <td>@forecast.Date.ToShortDateString()</td>
-                <td>@forecast.TemperatureC</td>
-                <td>@forecast.TemperatureF</td>
-                <td>@forecast.Summary</td>
-            </tr>
-        }
-        </tbody>
-    </table>
-}
+<div class="form-group">
+    <label for="username">Username:</label>
+    <input id="username" type="text" class="form-control" @bind="@User.Username" />
+</div>
+
+<button class="btn btn-primary" @onclick="UpdateProfile">Save</button>
+
+<p><a href="/home">Back to Home</a></p>
 
 @code {
-    private WeatherForecast[]? forecasts;
+    private User User { get; set; } = new User();
 
     protected override async Task OnInitializedAsync()
     {
-        forecasts = await ForecastService.GetForecastAsync(DateOnly.FromDateTime(DateTime.Now));
+        await LoadUserProfile();
     }
 
+    private async Task LoadUserProfile()
+    {
+        var token = await JsRuntime.InvokeAsync<string>("localStorage.getItem", "token");
+        if (!string.IsNullOrEmpty(token))
+        {
+            // Decodificar o token JWT
+            var jwtHandler = new JwtSecurityTokenHandler();
+            var jwtToken = jwtHandler.ReadJwtToken(token);
+
+            // Obter as informações do usuário do token decodificado
+            var username = jwtToken.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value;
+
+            // Fazer solicitação HTTP para obter o perfil do usuário
+            var response = await HttpClient.GetAsync($"http://localhost:5052/api/Users/username/{username}");
+
+            if (response.IsSuccessStatusCode)
+            {
+                User = await response.Content.ReadFromJsonAsync<User>();
+
+                // Atualizar as propriedades do usuário para refletir os valores obtidos do backend
+                User.Displayname = User.Displayname ?? string.Empty;
+                User.Username = User.Username ?? string.Empty;
+            }
+        }
+    }
+
+    private async Task UpdateProfile()
+    {
+        var token = await JsRuntime.InvokeAsync<string>("localStorage.getItem", "token");
+        if (!string.IsNullOrEmpty(token))
+        {
+            // Decodificar o token JWT
+            var jwtHandler = new JwtSecurityTokenHandler();
+            var jwtToken = jwtHandler.ReadJwtToken(token);
+
+            // Obter as informações do usuário do token decodificado
+            var username = jwtToken.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value;
+
+            // Fazer solicitação HTTP para atualizar o perfil do usuário
+            var response = await HttpClient.PutAsJsonAsync($"http://localhost:5052/api/Users/{username}", User);
+
+            if (response.IsSuccessStatusCode)
+            {
+                // Atualização do perfil bem-sucedida
+                NavigationManager.NavigateTo("/home");
+            }
+            else
+            {
+                // Atualização do perfil falhou, exibir mensagem de erro
+            }
+        }
+    }
 }

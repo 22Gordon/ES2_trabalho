@@ -26,6 +26,19 @@ namespace Backend.Controllers
         {
             return await _context.Users.ToListAsync();
         }
+        
+        // GET user por username
+        [HttpGet("username/{username}")]
+        public IActionResult GetUserByUsername(string username)
+        {
+            var user = _context.Users.FirstOrDefault(u => u.Username == username);
+            if (user == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(user);
+        }
 
         // GET: api/Users/5
         [HttpGet("{id}")]
