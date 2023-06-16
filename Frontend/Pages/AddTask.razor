@@ -42,10 +42,15 @@
     
     private async Task CreateTask()
     {
+        if (task.Startdate == default)
+        {
+            task.Startdate = DateTime.UtcNow; 
+        }
+
         using (var httpClient = new HttpClient())
         {
             var json = JsonConvert.SerializeObject(task);
-            Console.WriteLine("JSON: " + json);
+            //Console.WriteLine("JSON: " + json);
             var content = new StringContent(json, Encoding.UTF8, "application/json");
 
             var response = await httpClient.PostAsync("http://localhost:5052/api/UserTasks", content);
@@ -55,8 +60,9 @@
             }
             else
             {
-                // Handle error response here if needed
+    // Handle error response here if needed
             }
         }
     }
+
 }

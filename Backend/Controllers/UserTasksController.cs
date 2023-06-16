@@ -63,6 +63,7 @@ namespace Backend.Controllers
             task.Freelancerid = updatedTask.Freelancerid;
             task.Startdate = updatedTask.Startdate;
             task.Pricehour = updatedTask.Pricehour;
+            task.Enddate = updatedTask.Enddate;
 
             _context.SaveChanges();
             return NoContent();
