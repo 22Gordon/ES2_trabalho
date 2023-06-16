@@ -1,19 +1,114 @@
-﻿@page "/counter"
+﻿@page "/tasks"
+@using Newtonsoft.Json
+@layout MainLayout
+@using System.IdentityModel.Tokens.Jwt
+@using BusinessLogic.Entities
+@using BusinessLogic.Models
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JsRuntime
+@inject HttpClient HttpClient
 
-<PageTitle>Counter</PageTitle>
+<PageTitle>Tasks</PageTitle>
 
-<h1>Counter</h1>
+<a href="/addtask">Create a new task</a>
 
-<p role="status">Current count: @currentCount</p>
+<h3>Tasks</h3>
 
-<button class="btn btn-primary" @onclick="IncrementCount">Click me</button>
+@if (tasks != null)
+{
+    <p>Number of tasks: @tasks.Count</p>
+    <table>
+        <thead>
+            <tr>
+                <th>Task Id</th>
+                <th>Start DateTime</th>
+                <th>Hourly Rate</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var task in tasks)
+            {
+                <tr>
+                    <td>@task.Taskid</td>
+                    <td>@task.Startdate</td>
+                    <td>@task.Pricehour</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+else
+{
+    <p>No tasks found.</p>
+}
 
 @code {
-    private int currentCount = 0;
+    private List<UserTask> tasks;
+    private Guid loggedUser;
 
-    private void IncrementCount()
+    protected override async Task OnInitializedAsync()
     {
-        currentCount++;
+        loggedUser = await LoadUserProfile();
+        tasks = await GetTasksFromApi();
     }
 
+    private async Task<Guid> LoadUserProfile()
+    {
+        var token = await JsRuntime.InvokeAsync<string>("localStorage.getItem", "token");
+        if (!string.IsNullOrEmpty(token))
+        {
+            var jwtHandler = new JwtSecurityTokenHandler();
+            var jwtToken = jwtHandler.ReadJwtToken(token);
+            var userIdClaim = jwtToken.Claims.FirstOrDefault(c => c.Type == "userId");
+            if (userIdClaim != null && Guid.TryParse(userIdClaim.Value, out Guid userId))
+            {
+                var response = await HttpClient.GetAsync($"http://localhost:5052/api/Users/{userId}");
+                if (response.IsSuccessStatusCode)
+                {
+                    var userProfile = await response.Content.ReadFromJsonAsync<User>();
+                    return userProfile.Userid;
+                }
+                else
+                {
+                    return Guid.Empty;
+                }
+            }
+            else
+            {
+                return Guid.Empty;
+            }
+        }
+        else
+        {
+            return Guid.Empty;
+        }
+    }
+
+    private async Task<List<UserTask>> GetTasksFromApi()
+    {
+        var response = await HttpClient.GetAsync($"http://localhost:5052/api/UserTasks/user/{loggedUser}");
+        if (response.IsSuccessStatusCode)
+        {
+            var content = await response.Content.ReadAsStringAsync();
+            Console.WriteLine(content);
+            try
+            {
+                return JsonConvert.DeserializeObject<List<UserTask>>(content);
+            }
+            catch (JsonException ex)
+            {
+                Console.WriteLine(ex.ToString());
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.ToString());
+            }
+        }
+        else
+        {
+            Console.WriteLine(response.StatusCode.ToString());
+        }
+
+        return new List<UserTask>();
+    }
 }

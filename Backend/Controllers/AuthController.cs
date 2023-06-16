@@ -2,7 +2,6 @@ using System;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
-using BusinessLogic.Entities;
 using Microsoft.AspNetCore.Mvc;
 using BusinessLogic.Context;
 using BusinessLogic.Models;

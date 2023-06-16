@@ -13,7 +13,9 @@ public partial class UserTask
 
     public DateTime? Startdate { get; set; }
 
-    public DateTime? Enddate { get; set; }
+    public string? Title { get; set; }
+
+    public string? Description { get; set; }
 
     public double? Pricehour { get; set; }
 

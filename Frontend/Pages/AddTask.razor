@@ -1,0 +1,62 @@
+@page "/addtask"
+@layout MainLayout
+@using Newtonsoft.Json
+@using System.Text
+@using BusinessLogic.Entities
+@using BusinessLogic.Models
+@using Microsoft.Net.Http.Headers
+@using MediaTypeHeaderValue = System.Net.Http.Headers.MediaTypeHeaderValue
+@inject NavigationManager NavigationManager
+
+<h3>Add Task</h3>
+<form>
+    <div class="form-group">
+        <label for="title">Title</label>
+        <input type="text" class="form-control" id="title" @bind="task.Title" />
+    </div>
+    <div class="form-group">
+        <label for="description">Description</label>
+        <textarea class="form-control" id="description" @bind="task.Description"></textarea>
+    </div>
+    <div class="form-group">
+        <label for="startDate">Start Date</label>
+        <InputDate class="form-control" id="startDate" @bind-Value="task.Startdate" />
+    </div>
+    <div class="form-group">
+        <label for="hourlyRate">Hourly Rate</label>
+        <input type="text" class="form-control" id="hourlyRate" @bind="task.Pricehour" />
+    </div>
+    <div class="form-group">
+        <label for="freelancerId">Freelancer ID</label>
+        <input type="text" class="form-control" id="freelancerId" @bind="task.Freelancerid" />
+    </div>
+    <div class="form-group">
+        <label for="clientId">Client ID</label>
+        <input type="text" class="form-control" id="clientId" @bind="task.Clientid" />
+    </div>
+    <button type="button" class="btn btn-primary" @onclick="CreateTask">Create Task</button>
+</form>
+
+@code {
+    private UserTask task = new UserTask();
+    
+    private async Task CreateTask()
+    {
+        using (var httpClient = new HttpClient())
+        {
+            var json = JsonConvert.SerializeObject(task);
+            Console.WriteLine("JSON: " + json);
+            var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+            var response = await httpClient.PostAsync("http://localhost:5052/api/UserTasks", content);
+            if (response.IsSuccessStatusCode)
+            {
+                NavigationManager.NavigateTo("/tasks");
+            }
+            else
+            {
+                // Handle error response here if needed
+            }
+        }
+    }
+}

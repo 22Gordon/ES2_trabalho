@@ -144,14 +144,13 @@ public partial class TasksDbContext : DbContext
                 .HasDefaultValueSql("uuid_generate_v4()")
                 .HasColumnName("taskid");
             entity.Property(e => e.Clientid).HasColumnName("clientid");
-            entity.Property(e => e.Enddate)
-                .HasColumnType("timestamp without time zone")
-                .HasColumnName("enddate");
+            entity.Property(e => e.Description).HasColumnName("description");
             entity.Property(e => e.Freelancerid).HasColumnName("freelancerid");
             entity.Property(e => e.Pricehour).HasColumnName("pricehour");
-            entity.Property(e => e.Startdate)
-                .HasColumnType("timestamp without time zone")
-                .HasColumnName("startdate");
+            entity.Property(e => e.Startdate).HasColumnName("startdate");
+            entity.Property(e => e.Title)
+                .HasMaxLength(255)
+                .HasColumnName("title");
 
             entity.HasOne(d => d.Client).WithMany(p => p.UserTasks)
                 .HasForeignKey(d => d.Clientid)
