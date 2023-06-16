@@ -1,15 +1,15 @@
 ﻿@page "/home"
-@using Newtonsoft.Json
 @layout MainLayout
-@using System.IdentityModel.Tokens.Jwt
+@using Newtonsoft.Json
 @using BusinessLogic.Entities
+@using System.IdentityModel.Tokens.Jwt
 @inject NavigationManager NavigationManager
 @inject IJSRuntime JsRuntime
 @inject HttpClient HttpClient
 
 <PageTitle>Index</PageTitle>
 
-<h2>Hello, @loggedUser!</h2>
+<h2>Hello, @loggedUser?.Displayname!</h2> <!-- Line 12 -->
 
 <p>This is your main page.</p>
 <a href="/addproject">ABCD</a>
@@ -23,7 +23,7 @@
         <tr>
             <th>Id</th>
             <th>Name</th>
-            <th>Description</th>
+            <th>Preço</th>
         </tr>
         </thead>
         <tbody>
@@ -45,15 +45,15 @@ else
 
 @code {
     private List<Project> projects;
-    private Guid loggedUser;
+    private User loggedUser;
 
     protected override async Task OnInitializedAsync()
     {
-        projects = await GetProjectsFromApi();
         loggedUser = await LoadUserProfile();
+        projects = await GetProjectsFromApi();
     }
     
-    private async Task<Guid> LoadUserProfile()
+    private async Task<User> LoadUserProfile()
     {
         var token = await JsRuntime.InvokeAsync<string>("localStorage.getItem", "token");
         if (!string.IsNullOrEmpty(token))
@@ -72,29 +72,35 @@ else
                 if (response.IsSuccessStatusCode)
                 {
                     var userProfile = await response.Content.ReadFromJsonAsync<User>();
-                    return userProfile.Userid;
+                    return userProfile;
                 }
                 else
                 {
-                    return new Guid();
+                    return new User();
                 }
             }
             else
             {
-                return new Guid();
+                return new User();
             }
         }
         else
         {
-            return new Guid();
+            return new User();
         }
+    }
+    
+    private async Task SendMessageToConsole(string message)
+    {
+        await JsRuntime.InvokeVoidAsync("console.log", message);
     }
 
     private async Task<List<Project>> GetProjectsFromApi()
     {
         using (var httpClient = new HttpClient())
         {
-            var aux = loggedUser;
+            var aux = loggedUser.Userid;
+            await SendMessageToConsole("inside function: " + aux.ToString());
             var response = await httpClient.GetAsync($"http://localhost:5052/api/Projects/user/{aux}");
             if (response.IsSuccessStatusCode)
             {
