@@ -24,5 +24,5 @@ VALUES ('507d42fa-aa17-4478-ac2f-8ea8e31cd738', 'Project A', '8f6198b3-0760-4ab0
 INSERT INTO invite (projectID, freelancerID)
 VALUES ('507d42fa-aa17-4478-ac2f-8ea8e31cd738', '8f6198b3-0760-4ab0-b1f4-6e79890d317a');
 
-INSERT INTO user_task (freelancerID, clientID, startDate, priceHour, title, description)
-VALUES ('8f6198b3-0760-4ab0-b1f4-6e79890d317a', 'd6054b95-33ca-4a79-86c3-5d80a1f9d678', '2023-06-01 09:00:00', 25.0, 'Título da Tarefa', 'Descrição da Tarefa');
+INSERT INTO user_task (freelancerID, clientID, startDate, endDate, priceHour, title, description)
+VALUES ('8f6198b3-0760-4ab0-b1f4-6e79890d317a', 'd6054b95-33ca-4a79-86c3-5d80a1f9d678', '2023-06-01 09:00:00',null,  25.0, 'Título da Tarefa', 'Descrição da Tarefa');

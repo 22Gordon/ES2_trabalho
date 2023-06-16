@@ -2,6 +2,7 @@
 @using Newtonsoft.Json
 @layout MainLayout
 @using System.IdentityModel.Tokens.Jwt
+@using System.Text
 @using BusinessLogic.Entities
 @using BusinessLogic.Models
 @inject NavigationManager NavigationManager
@@ -20,8 +21,10 @@
     <table>
         <thead>
             <tr>
-                <th>Task Id</th>
-                <th>Start DateTime</th>
+                <th>Title</th>
+                <th>Description</th>
+                <th>Start Date</th>
+                <th>End Date</th>
                 <th>Hourly Rate</th>
             </tr>
         </thead>
@@ -29,9 +32,24 @@
             @foreach (var task in tasks)
             {
                 <tr>
-                    <td>@task.Taskid</td>
+                    <td>@task.Title</td>
+                    <td>@task.Description</td>
                     <td>@task.Startdate</td>
+                    <td>@task.Enddate</td>
                     <td>@task.Pricehour</td>
+                    <td>
+                        @if (task.Enddate == null)
+                        {
+                            <button class="btn btn-danger" @onclick="() => EndTask(task)">End Task</button>
+                        }
+                        else
+                        {
+                            <span class="text-muted">Task Ended</span>
+                        }
+                    </td>
+                    <td>
+                        <button class="btn btn-danger" @onclick="() => RemoveTask(task.Taskid)">Remove Task</button>
+                    </td>
                 </tr>
             }
         </tbody>
@@ -111,4 +129,43 @@ else
 
         return new List<UserTask>();
     }
+
+    private async Task EndTask(UserTask task)
+    {
+        task.Enddate = DateTime.Now; 
+
+        using (var httpClient = new HttpClient())
+        {
+            var json = JsonConvert.SerializeObject(task);
+            var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+            var response = await httpClient.PutAsync($"http://localhost:5052/api/UserTasks/{task.Taskid}", content);
+            if (response.IsSuccessStatusCode)
+            {
+            // Atualização bem-sucedida, recarrega as tarefas
+                tasks = await GetTasksFromApi();
+            }
+            else
+            {
+            // Handle error response here if needed
+            }
+        }
+    }
+    
+    private async Task RemoveTask(Guid taskId)
+    {
+        using (var httpClient = new HttpClient())
+        {
+            var response = await httpClient.DeleteAsync($"http://localhost:5052/api/UserTasks/{taskId}");
+            if (response.IsSuccessStatusCode)
+            {
+                tasks.RemoveAll(t => t.Taskid == taskId);
+            }
+            else
+            {
+            // Handle error response here if needed
+            }
+        }
+    }
+
 }
