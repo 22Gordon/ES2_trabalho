@@ -38,19 +38,13 @@ namespace Backend.Controllers
         }
         
         // GET api/projects/user/{id}
-        // List specific project, based on id
-        [HttpGet("user/{id}")]
-        public IActionResult GetProjectByUser(Guid id)
+        // List all projects, based on user id
+        [HttpGet("user/{id:guid}")]
+        public async Task<ActionResult<IEnumerable<dynamic>>> GetProjectByUser(Guid id)
         {
-            var project = _context.Projects
-                .Include(p => p.Projectleader)
-                .Include(p => p.Client)
-                .FirstOrDefault(p => p.Projectleaderid == id || p.Clientid == id);
-            if (project == null)
-            {
-                return NotFound();
-            }
-            return Ok(project);
+            return await _context.Projects
+                .Where(p => p.Projectleaderid == id || p.Clientid == id)
+                .ToListAsync();
         }
         
         // PUT api/projects/{id}
