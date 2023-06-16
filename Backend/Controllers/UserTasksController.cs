@@ -46,7 +46,7 @@ namespace Backend.Controllers
             }
             return Ok(task);
         }
-        
+
         // PUT api/usertasks/{id}
         // Update db specific user task, based on id
         [HttpPut("{id}")]

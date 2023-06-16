@@ -6,7 +6,10 @@
 @using BusinessLogic.Models
 @using Microsoft.Net.Http.Headers
 @using MediaTypeHeaderValue = System.Net.Http.Headers.MediaTypeHeaderValue
+@using System.IdentityModel.Tokens.Jwt
 @inject NavigationManager NavigationManager
+@inject IJSRuntime JsRuntime
+@inject HttpClient HttpClient
 
 <h3>Add Task</h3>
 <form>
@@ -26,19 +29,153 @@
         <label for="hourlyRate">Hourly Rate</label>
         <input type="text" class="form-control" id="hourlyRate" @bind="task.Pricehour" />
     </div>
-    <div class="form-group">
-        <label for="freelancerId">Freelancer ID</label>
-        <input type="text" class="form-control" id="freelancerId" @bind="task.Freelancerid" />
-    </div>
-    <div class="form-group">
-        <label for="clientId">Client ID</label>
-        <input type="text" class="form-control" id="clientId" @bind="task.Clientid" />
-    </div>
+    @if (isClient)
+        {
+            <div class="form-group">
+                <label for="projectLeaderId">Project Leader</label>
+                <select class="form-control" id="projectLeaderId" @bind="task.Freelancerid">
+                    <option value="">Select Project Leader</option>
+                    @foreach (var freelancer in freelancers)
+                    {
+                        <option value="@freelancer.Userid">
+                            @freelancer.Userid
+                        </option>
+                    }
+                </select>
+            </div>
+        }
+        else
+        {
+            <div class="form-group">
+                <label for="FreelancerId">Freelancer</label>
+                <input class="form-control" 
+                       type="text"
+                       id="projectLeaderId"
+                       readonly
+                       value="@loggedUser?.Userid"/>
+            </div>
+        }
+        @if (!isClient)
+        {
+            <div class="form-group">
+                <label for="clientId">Client</label>
+                <select class="form-control" id="clientId" @bind="task.Clientid">
+                    <option value="">Select Client</option>
+                    @foreach (var client in clients)
+                    {
+                        <option value="@client.Userid">
+                            @client.Userid
+                        </option>
+                    }
+                </select>
+            </div>
+        }
+        else
+        {
+            <div class="form-group">
+                <label for="clientId">Client</label>
+                <input class="form-control" 
+                       type="text"
+                       id="clientId"
+                       readonly
+                       value="@loggedUser?.Userid"/>
+            </div>
+        }
     <button type="button" class="btn btn-primary" @onclick="CreateTask">Create Task</button>
 </form>
 
 @code {
     private UserTask task = new UserTask();
+    private List<Freelancer> freelancers = new List<Freelancer>();
+    private List<Client> clients = new List<Client>();
+    private User loggedUser;
+    private List<Guid> cIds;
+    private Boolean isClient;
+    
+    protected override async Task OnInitializedAsync()
+    {
+        loggedUser = await LoadUserProfile();
+        // Fetch project leaders and clients from the API
+        freelancers = await GetFreelancersFromApi();
+        clients = await GetClientsFromApi();
+
+        cIds = clients.Select(c => c.Userid).ToList();
+
+        isClient = cIds.Contains(loggedUser.Userid);
+    }
+    
+    private async Task<User> LoadUserProfile()
+    {
+        var token = await JsRuntime.InvokeAsync<string>("localStorage.getItem", "token");
+        if (!string.IsNullOrEmpty(token))
+        {
+            // Descodificar o token
+            var jwtHandler = new JwtSecurityTokenHandler();
+            var jwtToken = jwtHandler.ReadJwtToken(token);
+
+            // Obter o ID do utilizador do token
+            var userIdClaim = jwtToken.Claims.FirstOrDefault(c => c.Type == "userId");
+            if (userIdClaim != null && Guid.TryParse(userIdClaim.Value, out Guid userId))
+            {
+                // Fazer solicitação HTTP para obter o perfil do utilizador
+                var response = await HttpClient.GetAsync($"http://localhost:5052/api/Users/{userId}");
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var userProfile = await response.Content.ReadFromJsonAsync<User>();
+                    return userProfile;
+                }
+                else
+                {
+                    return new User();
+                }
+            }
+            else
+            {
+                return new User();
+            }
+        }
+        else
+        {
+            return new User();
+        }
+    }
+    
+    private async Task<List<Freelancer>> GetFreelancersFromApi()
+    {
+        using (var httpClient = new HttpClient())
+        {
+            var response = await httpClient.GetAsync("http://localhost:5052/api/Freelancers");
+            if (response.IsSuccessStatusCode)
+            {
+                var content = await response.Content.ReadAsStringAsync();
+                return JsonConvert.DeserializeObject<List<Freelancer>>(content);
+            }
+            else
+            {
+                // Handle error response here if needed
+                return new List<Freelancer>();
+            }
+        }
+    }
+
+    private async Task<List<Client>> GetClientsFromApi()
+    {
+        using (var httpClient = new HttpClient())
+        {
+            var response = await httpClient.GetAsync("http://localhost:5052/api/Clients");
+            if (response.IsSuccessStatusCode)
+            {
+                var content = await response.Content.ReadAsStringAsync();
+                return JsonConvert.DeserializeObject<List<Client>>(content);
+            }
+            else
+            {
+                // Handle error response here if needed
+                return new List<Client>();
+            }
+        }
+    }
     
     private async Task CreateTask()
     {
@@ -49,6 +186,14 @@
 
         using (var httpClient = new HttpClient())
         {
+            if (isClient)
+            {
+                task.Clientid = loggedUser?.Userid;
+            }
+            else
+            {
+                task.Freelancerid = loggedUser?.Userid;
+            }
             var json = JsonConvert.SerializeObject(task);
             //Console.WriteLine("JSON: " + json);
             var content = new StringContent(json, Encoding.UTF8, "application/json");
