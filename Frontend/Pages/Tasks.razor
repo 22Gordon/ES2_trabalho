@@ -15,9 +15,21 @@
 
 <h3>Tasks</h3>
 
-@if (tasks != null)
+<div>
+    <label for="startDate">Start Date:</label>
+    <input type="date" id="startDate" @bind="startDate" />
+</div>
+
+<div>
+    <label for="endDate">End Date:</label>
+    <input type="date" id="endDate" @bind="endDate" />
+</div>
+
+<button @onclick="ListTasksBetweenDates">List Tasks</button>
+
+@if (filteredTasks != null)
 {
-    <p>Number of tasks: @tasks.Count</p>
+    <p>Number of tasks: @filteredTasks.Count</p>
     <table>
         <thead>
             <tr>
@@ -26,10 +38,11 @@
                 <th>Start Date</th>
                 <th>End Date</th>
                 <th>Hourly Rate</th>
+                <th>Task duration</th>
             </tr>
         </thead>
         <tbody>
-            @foreach (var task in tasks)
+            @foreach (var task in filteredTasks)
             {
                 <tr>
                     <td>@task.Title</td>
@@ -37,6 +50,7 @@
                     <td>@task.Startdate</td>
                     <td>@task.Enddate</td>
                     <td>@task.Pricehour</td>
+                    <td>@task.Duration.ToString("hh\\:mm")</td>
                     <td>
                         @if (task.Enddate == null)
                         {
@@ -62,12 +76,21 @@ else
 
 @code {
     private List<UserTask> tasks;
+    private List<UserTask> filteredTasks;
     private Guid loggedUser;
+    private DateTime startDate;
+    private DateTime endDate;
 
     protected override async Task OnInitializedAsync()
     {
         loggedUser = await LoadUserProfile();
         tasks = await GetTasksFromApi();
+        
+    // Inicializar startDate como a data atual menos um mês
+        startDate = DateTime.Now.AddMonths(-1);
+
+    // Inicializar endDate como a data atual
+        endDate = DateTime.Now;
     }
 
     private async Task<Guid> LoadUserProfile()
@@ -111,7 +134,8 @@ else
             Console.WriteLine(content);
             try
             {
-                return JsonConvert.DeserializeObject<List<UserTask>>(content);
+                var allTasks = JsonConvert.DeserializeObject<List<UserTask>>(content);
+                return allTasks;
             }
             catch (JsonException ex)
             {
@@ -132,7 +156,7 @@ else
 
     private async Task EndTask(UserTask task)
     {
-        task.Enddate = DateTime.Now; 
+        task.Enddate = DateTime.Now;
 
         using (var httpClient = new HttpClient())
         {
@@ -142,16 +166,16 @@ else
             var response = await httpClient.PutAsync($"http://localhost:5052/api/UserTasks/{task.Taskid}", content);
             if (response.IsSuccessStatusCode)
             {
-            // Atualização bem-sucedida, recarrega as tarefas
+                // Atualização bem-sucedida, recarrega as tarefas
                 tasks = await GetTasksFromApi();
             }
             else
             {
-            // Handle error response here if needed
+                // Handle error response here if needed
             }
         }
     }
-    
+
     private async Task RemoveTask(Guid taskId)
     {
         using (var httpClient = new HttpClient())
@@ -163,9 +187,16 @@ else
             }
             else
             {
-            // Handle error response here if needed
+                // Handle error response here if needed
             }
         }
     }
 
+    private void ListTasksBetweenDates()
+    {
+        filteredTasks = tasks.Where(task =>
+            task.Startdate >= startDate.Date &&
+            (task.Enddate == null || task.Enddate <= endDate.Date)
+            ).ToList();
+    }
 }
