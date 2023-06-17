@@ -1,0 +1,48 @@
+/* Estilos gerais */
+body {
+    font-family: Arial, sans-serif;
+}
+
+h3 {
+    margin-bottom: 20px;
+    font-size: 1000px;
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+.btn-primary {
+    background-color: #007bff;
+    color: #fff;
+    border: none;
+    padding: 8px 20px;
+    cursor: pointer;
+}
+
+.btn-primary:hover {
+    background-color: #0069d9;
+}
+
+p {
+    margin-bottom: 15px;
+}
+
+/* Estilos para o formulário de login */
+#username,
+#password {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box;
+}
+
+a {
+    color: #007bff;
+}
+
+.error-message {
+    color: red;
+    margin-top: 10px;
+}
