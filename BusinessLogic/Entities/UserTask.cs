@@ -24,8 +24,6 @@ public partial class UserTask
     public virtual Client? Client { get; set; }
 
     public virtual Freelancer? Freelancer { get; set; }
-    
-    public TimeSpan Duration { get; set; }
 
     public virtual ICollection<Project> Projects { get; set; } = new List<Project>();
 }
