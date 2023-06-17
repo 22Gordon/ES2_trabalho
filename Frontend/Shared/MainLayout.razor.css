@@ -2,6 +2,8 @@
     position: relative;
     display: flex;
     flex-direction: column;
+    background-image: url('images/blueBackground.jpg');
+    background-size: cover;
 }
 
 main {
