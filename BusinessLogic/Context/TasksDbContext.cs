@@ -20,6 +20,8 @@ public partial class TasksDbContext : DbContext
 
     public virtual DbSet<Freelancer> Freelancers { get; set; }
 
+    public virtual DbSet<Invite> Invites { get; set; }
+
     public virtual DbSet<Project> Projects { get; set; }
 
     public virtual DbSet<User> Users { get; set; }
@@ -70,6 +72,27 @@ public partial class TasksDbContext : DbContext
                 .HasConstraintName("freelancer_userid_fkey");
         });
 
+        modelBuilder.Entity<Invite>(entity =>
+        {
+            entity.HasKey(e => new { e.Projectid, e.Freelancerid }).HasName("invite_pkey");
+
+            entity.ToTable("invite");
+
+            entity.Property(e => e.Projectid).HasColumnName("projectid");
+            entity.Property(e => e.Freelancerid).HasColumnName("freelancerid");
+            entity.Property(e => e.Isaccepted).HasColumnName("isaccepted");
+
+            entity.HasOne(d => d.Freelancer).WithMany(p => p.Invites)
+                .HasForeignKey(d => d.Freelancerid)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("invite_freelancerid_fkey");
+
+            entity.HasOne(d => d.Project).WithMany(p => p.Invites)
+                .HasForeignKey(d => d.Projectid)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("invite_projectid_fkey");
+        });
+
         modelBuilder.Entity<Project>(entity =>
         {
             entity.HasKey(e => e.Projectid).HasName("project_pkey");
@@ -90,28 +113,9 @@ public partial class TasksDbContext : DbContext
                 .HasForeignKey(d => d.Clientid)
                 .HasConstraintName("project_clientid_fkey");
 
-            entity.HasOne(d => d.Projectleader).WithMany(p => p.ProjectsNavigation)
+            entity.HasOne(d => d.Projectleader).WithMany(p => p.Projects)
                 .HasForeignKey(d => d.Projectleaderid)
                 .HasConstraintName("project_projectleaderid_fkey");
-
-            entity.HasMany(d => d.Freelancers).WithMany(p => p.Projects)
-                .UsingEntity<Dictionary<string, object>>(
-                    "Invite",
-                    r => r.HasOne<Freelancer>().WithMany()
-                        .HasForeignKey("Freelancerid")
-                        .OnDelete(DeleteBehavior.ClientSetNull)
-                        .HasConstraintName("invite_freelancerid_fkey"),
-                    l => l.HasOne<Project>().WithMany()
-                        .HasForeignKey("Projectid")
-                        .OnDelete(DeleteBehavior.ClientSetNull)
-                        .HasConstraintName("invite_projectid_fkey"),
-                    j =>
-                    {
-                        j.HasKey("Projectid", "Freelancerid").HasName("invite_pkey");
-                        j.ToTable("invite");
-                        j.IndexerProperty<Guid>("Projectid").HasColumnName("projectid");
-                        j.IndexerProperty<Guid>("Freelancerid").HasColumnName("freelancerid");
-                    });
         });
 
         modelBuilder.Entity<User>(entity =>

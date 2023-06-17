@@ -9,11 +9,11 @@ public partial class Freelancer
 
     public double? Dailyavghours { get; set; }
 
-    public virtual ICollection<Project> ProjectsNavigation { get; set; } = new List<Project>();
+    public virtual ICollection<Invite> Invites { get; set; } = new List<Invite>();
+
+    public virtual ICollection<Project> Projects { get; set; } = new List<Project>();
 
     public virtual User User { get; set; } = null!;
 
     public virtual ICollection<UserTask> UserTasks { get; set; } = new List<UserTask>();
-
-    public virtual ICollection<Project> Projects { get; set; } = new List<Project>();
 }

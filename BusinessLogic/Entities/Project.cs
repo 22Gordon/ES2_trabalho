@@ -17,9 +17,9 @@ public partial class Project
 
     public virtual Client? Client { get; set; }
 
-    public virtual Freelancer? Projectleader { get; set; }
+    public virtual ICollection<Invite> Invites { get; set; } = new List<Invite>();
 
-    public virtual ICollection<Freelancer> Freelancers { get; set; } = new List<Freelancer>();
+    public virtual Freelancer? Projectleader { get; set; }
 
     public virtual ICollection<UserTask> Tasks { get; set; } = new List<UserTask>();
 }
