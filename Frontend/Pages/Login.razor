@@ -5,56 +5,68 @@
 @inject HttpClient HttpClient
 @inject IJSRuntime JsRuntime
 
-<h3>Login</h3>
+<head>
+    <link rel="stylesheet" href="login.css">
+</head>
 
-<div class="form-group">
-    <label for="username">Username:</label>
-    <input id="username" type="text" class="form-control" @bind="@Username" />
-</div>
+<body>
+    <div class="login">
+        <h3>Login</h3>
+        <div class="form-field">
+            <label for="username"></label>
+            <input id="username" type="text" class="form-input icon-user" placeholder="Username" @bind="@Username" />
+        </div>
 
-<div class="form-group">
-    <label for="password">Password:</label>
-    <input id="password" type="password" class="form-control" @bind="@Password" />
-</div>
+        <div class="form-field">
+            <label for="password"></label>
+            <input id="password" type="password" class="form-input icon-user" placeholder="Password" @bind="@Password" />
+        </div>
 
-<button class="btn btn-primary" @onclick="HandleLogin">Login</button>
+        <!-- Exibir mensagem de erro -->
+        @if (!string.IsNullOrEmpty(ErrorMessage))
+        {
+            <p class="error-message">@ErrorMessage</p>
+        }
 
-<p><a href="#">Forgot Password?</a></p>
+        <button class="btn" @onclick="HandleLogin">Login</button>
 
-<p>Don't have an account? <NavLink href="/register">Register</NavLink></p>
+        <p><a href="#">Forgot Password?</a></p>
+
+        <p>Don't have an account? <a href="/register">Register</a></p>
+    </div>
+</body>
 
 @code {
     private string Username { get; set; }
     private string Password { get; set; }
+    private string ErrorMessage { get; set; }
 
     private async Task HandleLogin()
     {
-    // Criar loginModel object
+        // Criar loginModel object
         var user = new LoginModel
         {
             Username = Username,
             Password = Password
         };
 
-    // HTTP para a logica do login
+        // HTTP para a logica do login
         var response = await HttpClient.PostAsJsonAsync("http://localhost:5052/api/Auth/token", user);
 
         if (response.IsSuccessStatusCode)
         {
-    // Login com sucesso ir buscar o token gerado
+            // Login com sucesso ir buscar o token gerado
             var result = await response.Content.ReadFromJsonAsync<TokenResponse>();
             var token = result.Token;
 
-    // Guardar o token no browsers localstorage
+            // Guardar o token no browsers localstorage
             await JsRuntime.InvokeVoidAsync("localStorage.setItem", "token", token);
-
-    // Ir para a home page
+            
             NavigationManager.NavigateTo("/home");
         }
         else
         {
-    // Login failed, display an error message
-
+            ErrorMessage = "Invalid username or password.";
         }
     }
 }

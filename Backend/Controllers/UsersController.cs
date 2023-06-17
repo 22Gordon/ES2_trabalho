@@ -158,5 +158,13 @@ namespace Backend.Controllers
 
             return Ok();
         }
+        
+        // GET: api/Users/CheckUsername/{username}
+        [HttpGet("CheckUsername/{username}")]
+        public async Task<ActionResult<bool>> CheckUsername(string username)
+        {
+            var existingUser = await _context.Users.FirstOrDefaultAsync(u => u.Username == username);
+            return existingUser == null;
+        }
     }
 }
