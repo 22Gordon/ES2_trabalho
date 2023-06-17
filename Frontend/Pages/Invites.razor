@@ -6,32 +6,38 @@
 @using System.Text
 @inject IJSRuntime JsRuntime
 
+
+<head>
+    <link rel="stylesheet" href="invites.css">
+</head>
+
+
 <h3>Invites</h3>
 
 @if (inviteViewModels != null && inviteViewModels.Any())
 {
-    <table>
+    <table class="invites-table">
         <thead>
-            <tr>
-                <th>Projeto</th>
-                <th>Status</th>
-                <th>Aceitar Convite</th>
-            </tr>
+        <tr>
+            <th>Projeto</th>
+            <th>Status</th>
+            <th>Aceitar Convite</th>
+        </tr>
         </thead>
         <tbody>
-            @foreach (var inviteViewModel in inviteViewModels)
-            {
-                <tr>
-                    <td>@inviteViewModel.ProjectName</td>
-                    <td>@(inviteViewModel.IsAccepted ? "Aceite" : "Não Aceite")</td>
-                    <td>
-                        @if (!inviteViewModel.IsAccepted)
-                        {
-                            <button @onclick="() => AcceptInvite(inviteViewModel)">Aceitar</button>
-                        }
-                    </td>
-                </tr>
-            }
+        @foreach (var inviteViewModel in inviteViewModels)
+        {
+            <tr>
+                <td>@inviteViewModel.ProjectName</td>
+                <td>@(inviteViewModel.IsAccepted ? "Aceite" : "Não Aceite")</td>
+                <td>
+                    @if (!inviteViewModel.IsAccepted)
+                    {
+                        <button class="accept-button" @onclick="() => AcceptInvite(inviteViewModel)">Aceitar</button>
+                    }
+                </td>
+            </tr>
+        }
         </tbody>
     </table>
 }
@@ -44,6 +50,11 @@ else
     private List<InviteViewModel> inviteViewModels;
 
     protected override async Task OnInitializedAsync()
+    {
+        await RefreshInvites();
+    }
+
+    private async Task RefreshInvites()
     {
         inviteViewModels = await GetInvitesFromApi();
     }
@@ -66,16 +77,18 @@ else
                     }
                     catch (JsonException)
                     {
-                        // Handle JSON parsing error
-                        // You can display an error message or log the error
+                        ShowErrorMessage("Error parsing invite data.");
                     }
                 }
                 else
                 {
-                    // Handle non-success status code
-                    // You can display an error message or log the error
+                    ShowErrorMessage($"Error retrieving invites. Status code: {response.StatusCode}");
                 }
             }
+        }
+        else
+        {
+            ShowErrorMessage("Invalid user ID.");
         }
 
         return new List<InviteViewModel>();
@@ -93,6 +106,14 @@ else
             {
                 return userId;
             }
+            else
+            {
+                ShowErrorMessage("Invalid user ID claim in JWT.");
+            }
+        }
+        else
+        {
+            ShowErrorMessage("Token not found in local storage.");
         }
 
         return Guid.Empty;
@@ -118,18 +139,21 @@ else
                 var response = await httpClient.PostAsync("http://localhost:5052/api/Invite/accept", content);
                 if (response.IsSuccessStatusCode)
                 {
-                    // Invitation accepted successfully
-                    // You can perform any necessary actions or show a success message
+                    await RefreshInvites();
                 }
                 else
                 {
-                    // Handle non-success status code
-                    // You can display an error message or log the error
+                    ShowErrorMessage($"Error accepting invite. Status code: {response.StatusCode}");
                 }
-
-                // Refresh the invites list
-                inviteViewModels = await GetInvitesFromApi();
             }
         }
+        else
+        {
+            ShowErrorMessage("Invalid user ID.");
+        }
+    }
+    private void ShowErrorMessage(string message)
+    {
+        Console.WriteLine($"Error: {message}");
     }
 }
