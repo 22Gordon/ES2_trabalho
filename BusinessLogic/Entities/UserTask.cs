@@ -21,6 +21,8 @@ public partial class UserTask
 
     public double? Pricehour { get; set; }
 
+    public TimeSpan? Duration { get; set; }
+
     public virtual Client? Client { get; set; }
 
     public virtual Freelancer? Freelancer { get; set; }

@@ -145,6 +145,7 @@ public partial class TasksDbContext : DbContext
                 .HasColumnName("taskid");
             entity.Property(e => e.Clientid).HasColumnName("clientid");
             entity.Property(e => e.Description).HasColumnName("description");
+            entity.Property(e => e.Duration).HasColumnName("duration");
             entity.Property(e => e.Enddate).HasColumnName("enddate");
             entity.Property(e => e.Freelancerid).HasColumnName("freelancerid");
             entity.Property(e => e.Pricehour).HasColumnName("pricehour");

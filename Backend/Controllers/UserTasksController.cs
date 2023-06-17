@@ -63,7 +63,14 @@ namespace Backend.Controllers
             task.Freelancerid = updatedTask.Freelancerid;
             task.Startdate = updatedTask.Startdate;
             task.Pricehour = updatedTask.Pricehour;
-            task.Enddate = updatedTask.Enddate;
+            task.Enddate = updatedTask.Enddate?.ToUniversalTime();
+
+            // Calculate duration if both Startdate and Enddate are specified
+            if (task.Startdate.HasValue && task.Enddate.HasValue)
+            {
+                TimeSpan duration = task.Enddate.Value - task.Startdate.Value;
+                task.Duration = duration;
+            }
 
             _context.SaveChanges();
             return NoContent();

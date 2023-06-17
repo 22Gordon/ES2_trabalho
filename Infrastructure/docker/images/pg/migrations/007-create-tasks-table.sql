@@ -7,6 +7,7 @@ endDate     TIMESTAMP WITH TIME ZONE,
 title       VARCHAR(255),
 description TEXT,
 priceHour   FLOAT,
+duration    INTERVAL,
 FOREIGN KEY (freelancerID) REFERENCES freelancer (userID),
 FOREIGN KEY (clientID) REFERENCES client (userID)
 );
