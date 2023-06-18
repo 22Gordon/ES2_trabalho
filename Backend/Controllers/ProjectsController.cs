@@ -19,7 +19,7 @@ namespace Backend.Controllers
         // GET: api/Projects
         // List all projects
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<dynamic>>> getProjects()
+        public async Task<ActionResult<IEnumerable<dynamic>>> GetProjects()
         {
             return await _context.Projects.ToListAsync();
         }

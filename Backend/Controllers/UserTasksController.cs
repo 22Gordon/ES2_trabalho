@@ -76,22 +76,22 @@ namespace Backend.Controllers
             return NoContent();
         }
         
-            // POST api/projects
-            // Creates a db entity of a project
-            [HttpPost]
-            public IActionResult CreateTask(UserTask task)
+        // POST api/projects
+        // Creates a db entity of a project
+        [HttpPost]
+        public IActionResult CreateTask(UserTask task)
+        {
+            // Converter Startdate para UTC, se não estiver especificado como UTC
+            if (task.Startdate.HasValue && task.Startdate.Value.Kind != DateTimeKind.Utc)
             {
-                // Converter Startdate para UTC, se não estiver especificado como UTC
-                if (task.Startdate.HasValue && task.Startdate.Value.Kind != DateTimeKind.Utc)
-                {
-                    task.Startdate = task.Startdate.Value.ToUniversalTime();
-                }
-
-                _context.UserTasks.Add(task);
-                _context.SaveChanges();
-
-                return CreatedAtAction(nameof(GetUserTaskById), new { id = task.Taskid }, task);
+                task.Startdate = task.Startdate.Value.ToUniversalTime();
             }
+
+            _context.UserTasks.Add(task);
+            _context.SaveChanges();
+
+            return CreatedAtAction(nameof(GetUserTaskById), new { id = task.Taskid }, task);
+        }
 
         
         
