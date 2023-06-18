@@ -60,16 +60,16 @@ namespace Backend.Controllers
 
                     return Ok();
                 }
-                
+
                 return NotFound("Freelancer não encontrado.");
             }
             catch (Exception ex)
             {
                 return StatusCode(500, ex.Message);
             }
-            
+
         }
-        
+
         [HttpGet("user/{userId}")]
         public async Task<IActionResult> GetInvitesByUser(Guid userId)
         {
@@ -95,7 +95,7 @@ namespace Backend.Controllers
                 return StatusCode(500, ex.Message);
             }
         }
-        
+
         [HttpPost("accept")]
         public async Task<IActionResult> AcceptInvite(AcceptInviteModel model)
         {
@@ -103,7 +103,7 @@ namespace Backend.Controllers
             {
                 var invite = await _dbContext.Invites
                     .Include(invite => invite.Project)
-                    .SingleOrDefaultAsync(invite => invite.Project.Name == model.ProjectTitle);
+                    .FirstOrDefaultAsync(invite => invite.Project.Name == model.ProjectTitle);
 
                 if (invite != null && !invite.Isaccepted)
                 {
@@ -121,6 +121,7 @@ namespace Backend.Controllers
                 return StatusCode(500, ex.Message);
             }
         }
+
 
     }
 }

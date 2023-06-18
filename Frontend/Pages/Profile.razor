@@ -180,7 +180,7 @@
             // Fazer solicitação HTTP para atualizar a senha do utilizador
             var response = await HttpClient.PutAsJsonAsync($"http://localhost:5052/api/Users/changepassword/{username}", passwordUpdateModel);
 
-            if (response.IsSuccessStatusCode)
+            if (response.IsSuccessStatusCode) 
             {
                 NavigationManager.NavigateTo("/profile");
             }
