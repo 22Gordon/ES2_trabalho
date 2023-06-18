@@ -22,6 +22,7 @@ namespace Backend.Controllers
             _context = context;
         }
 
+        
         [HttpPost("token")]
         public IActionResult GenerateToken([FromBody] LoginModel user)
         {
