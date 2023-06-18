@@ -1,6 +1,9 @@
-﻿<div class="top-row ps-3 navbar navbar-dark">
+﻿@inject IJSRuntime JsRuntime
+@inject NavigationManager NavigationManager
+
+<div class="top-row ps-3 navbar navbar-dark">
     <div class="container-fluid">
-        <a class="navbar-brand" href="">Frontend</a>
+        <a class="navbar-brand" href="">LouQue projects</a>
         <button title="Navigation menu" class="navbar-toggler" @onclick="ToggleNavMenu">
             <span class="navbar-toggler-icon"></span>
         </button>
@@ -11,7 +14,7 @@
     <nav class="flex-column">
         <div class="nav-item px-3">
             <NavLink class="nav-link" href="home" Match="NavLinkMatch.All">
-                <span class="oi oi-home" aria-hidden="true"></span> Home
+                <span class="oi oi-project" aria-hidden="true"></span> Projects
             </NavLink>
         </div>
         <div class="nav-item px-3">
@@ -25,10 +28,15 @@
             </NavLink>
         </div>
         <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="invites">
-                        <span class="oi oi-envelope-closed" aria-hidden="true"></span> Invites
-                    </NavLink>
-                </div>
+            <NavLink class="nav-link" href="invites">
+                <span class="oi oi-envelope-closed" aria-hidden="true"></span> Invites
+            </NavLink>
+        </div>
+        <div class="top-row ps-3 navbar navbar-dark">
+            <div>
+                <button class="btn btn-outline-light" @onclick="Logout">Logout</button>
+            </div>
+        </div>
     </nav>
 </div>
 
@@ -40,6 +48,20 @@
     private void ToggleNavMenu()
     {
         collapseNavMenu = !collapseNavMenu;
+    }
+    
+    private void Logout()
+    {
+    // Limpar o token
+        ClearAuthenticationToken();
+
+    // Redirecionar para a página de login
+        NavigationManager.NavigateTo("/login");
+    }
+
+    private void ClearAuthenticationToken()
+    {
+        JsRuntime.InvokeVoidAsync("localStorage.removeItem", "token");
     }
 
 }

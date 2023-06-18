@@ -7,12 +7,17 @@
 @inject IJSRuntime JsRuntime
 @inject HttpClient HttpClient
 
-<PageTitle>Index</PageTitle>
+<head>
+    <link rel="stylesheet" href="projects.css">
+</head>
+
+<PageTitle>Projects</PageTitle>
 
 <h2>Hello, @loggedUser?.Displayname!</h2>
 
-<a href="/addproject">Create new project</a>
-
+<a href="/addproject" class="create-project-btn">
+    <span class="icon">+</span> Create new project
+</a>
 <h3>Projects</h3>
 
 @if (projects != null)
@@ -20,8 +25,7 @@
     <table>
         <thead>
         <tr>
-            <th>Titulo</th>
-            <th>Name</th>
+            <th>Title</th>
             <th>Preço</th>
         </tr>
         </thead>
@@ -29,7 +33,6 @@
         @foreach (var project in projects)
         {
             <tr>
-                <td>@project.Name</td>
                 <td>@project.Name</td>
                 <td>@project.Pricehour</td>
             </tr>

@@ -29,11 +29,11 @@
         {
             <tr>
                 <td>@inviteViewModel.ProjectName</td>
-                <td>@(inviteViewModel.IsAccepted ? "Aceite" : "Não Aceite")</td>
+                <td>@(inviteViewModel.IsAccepted ? "Accepted" : "Not accepted")</td>
                 <td>
                     @if (!inviteViewModel.IsAccepted)
                     {
-                        <button class="accept-button" @onclick="() => AcceptInvite(inviteViewModel)">Aceitar</button>
+                        <button class="accept-button" @onclick="() => AcceptInvite(inviteViewModel)">Accept</button>
                     }
                 </td>
             </tr>
