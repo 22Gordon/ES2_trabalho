@@ -2,9 +2,9 @@ using System;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
-using BusinessLogic.Entities;
 using Microsoft.AspNetCore.Mvc;
 using BusinessLogic.Context;
+using BusinessLogic.Models;
 using Microsoft.IdentityModel.Tokens;
 
 namespace Backend.Controllers
@@ -23,7 +23,7 @@ namespace Backend.Controllers
         }
 
         [HttpPost("token")]
-        public IActionResult GenerateToken([FromBody] User user)
+        public IActionResult GenerateToken([FromBody] LoginModel user)
         {
             if (IsValidUser(user))
             {
@@ -33,8 +33,9 @@ namespace Backend.Controllers
 
             return Unauthorized();
         }
+        
 
-        private bool IsValidUser(User user)
+        private bool IsValidUser(LoginModel user)
         {
             var existingUser = _context.Users.FirstOrDefault(u => u.Username == user.Username && u.Password == user.Password);
             return existingUser != null;
@@ -42,9 +43,18 @@ namespace Backend.Controllers
 
         private string GenerateJwtToken(string username)
         {
+            var existingUser = _context.Users.FirstOrDefault(u => u.Username == username);
+
+            if (existingUser == null)
+            {
+                // Utilizador não encontrado
+                throw new ArgumentException("Invalid user");
+            }
+
             var claims = new[]
             {
-                new Claim(ClaimTypes.Name, username)
+                new Claim(ClaimTypes.Name, username),
+                new Claim("userId", existingUser.Userid.ToString())
             };
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["JwtSettings:SecretKey"]));
@@ -61,5 +71,7 @@ namespace Backend.Controllers
 
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
+
+
     }
 }

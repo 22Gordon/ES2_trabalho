@@ -1,10 +1,13 @@
 CREATE TABLE user_task (
-taskID         uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
-projectID      uuid,
-freelancerID   uuid,
-startDate      TIMESTAMP,
-endDate        TIMESTAMP,
-priceHour      FLOAT,
-FOREIGN KEY (projectID) REFERENCES project (projectID),
-FOREIGN KEY (freelancerID) REFERENCES freelancer (userID)
+taskID      uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+freelancerID    uuid,
+clientID    uuid,
+startDate   TIMESTAMP WITH TIME ZONE,
+endDate     TIMESTAMP WITH TIME ZONE,
+title       VARCHAR(255),
+description TEXT,
+priceHour   FLOAT,
+duration    INTERVAL,
+FOREIGN KEY (freelancerID) REFERENCES freelancer (userID),
+FOREIGN KEY (clientID) REFERENCES client (userID)
 );

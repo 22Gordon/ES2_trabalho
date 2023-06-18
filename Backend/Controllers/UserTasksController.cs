@@ -10,7 +10,7 @@ namespace Backend.Controllers
     public class UserTasksController : ControllerBase
     {
         private readonly TasksDbContext _context;
-        
+
         public UserTasksController(TasksDbContext context)
         {
             _context = context;
@@ -25,6 +25,15 @@ namespace Backend.Controllers
             return Ok(tasks);
         }
         
+        // GET api/usertasks/user/{userId}
+        // List user tasks based on userId
+        [HttpGet("user/{userId}")]
+        public IActionResult GetUserTasks(Guid userId)
+        {
+            var userTasks = _context.UserTasks.Where(task => task.Clientid == userId || task.Freelancerid == userId).ToList();
+            return Ok(userTasks);
+        }
+        
         // GET api/usertasks/{id}
         // List specific user tasks, based on id
         [HttpGet("{id}")]
@@ -37,7 +46,7 @@ namespace Backend.Controllers
             }
             return Ok(task);
         }
-        
+
         // PUT api/usertasks/{id}
         // Update db specific user task, based on id
         [HttpPut("{id}")]
@@ -50,36 +59,41 @@ namespace Backend.Controllers
             }
 
             // Update task properties
-            task.Projectid = updatedTask.Projectid;
+            task.Clientid = updatedTask.Clientid;
             task.Freelancerid = updatedTask.Freelancerid;
             task.Startdate = updatedTask.Startdate;
-            task.Enddate = updatedTask.Enddate;
             task.Pricehour = updatedTask.Pricehour;
+            task.Enddate = updatedTask.Enddate?.ToUniversalTime();
+
+            // Calculate duration if both Startdate and Enddate are specified
+            if (task.Startdate.HasValue && task.Enddate.HasValue)
+            {
+                TimeSpan duration = task.Enddate.Value - task.Startdate.Value;
+                task.Duration = duration;
+            }
 
             _context.SaveChanges();
             return NoContent();
         }
         
-        // POST api/usertasks
-        // Creates a db entity of a UserTask
-        // POST api/usertasks
+        // POST api/projects
+        // Creates a db entity of a project
         [HttpPost]
-        public IActionResult CreateUserTask(UserTask userTask)
+        public IActionResult CreateTask(UserTask task)
         {
-            try
+            // Converter Startdate para UTC, se não estiver especificado como UTC
+            if (task.Startdate.HasValue && task.Startdate.Value.Kind != DateTimeKind.Utc)
             {
-                _context.UserTasks.Add(userTask);
-                _context.SaveChanges();
+                task.Startdate = task.Startdate.Value.ToUniversalTime();
+            }
 
-                return CreatedAtAction(nameof(GetUserTaskById), new { id = userTask.Taskid }, userTask);
-            }
-            catch (Exception ex)
-            {
-                // Handle any exceptions that occur during the database operation
-                return StatusCode(500, "An error occurred while saving the UserTask.");
-            }
+            _context.UserTasks.Add(task);
+            _context.SaveChanges();
+
+            return CreatedAtAction(nameof(GetUserTaskById), new { id = task.Taskid }, task);
         }
 
+        
         
         // DELETE api/usertasks/{id}
         // Deletes an entity from the database
@@ -97,17 +111,5 @@ namespace Backend.Controllers
             return NoContent();
         }
         
-        
-        // GET api/usertasks/{d1}&{d2}
-        // Selects a list of tasks between two dates
-        [HttpGet("{start_date}&{end_date}")]
-        public IActionResult GetTasksByDateRange(DateTime start_date, DateTime end_date)
-        {
-            var tasks = _context.UserTasks
-                .Where(t => t.Startdate >= start_date && t.Enddate <= end_date)
-                .ToList();
-
-            return Ok(tasks);
-        }
     }
 }

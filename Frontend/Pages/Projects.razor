@@ -1,0 +1,181 @@
+﻿@page "/home"
+@layout MainLayout
+@using Newtonsoft.Json
+@using BusinessLogic.Entities
+@using System.IdentityModel.Tokens.Jwt
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JsRuntime
+@inject HttpClient HttpClient
+
+<head>
+    <link rel="stylesheet" href="projects.css">
+</head>
+
+<PageTitle>Projects</PageTitle>
+
+<h2>Hello, @loggedUser?.Displayname!</h2>
+
+<a href="/addproject" class="create-project-btn">
+    <span class="icon">+</span> Create new project
+</a>
+<h3>Projects</h3>
+
+@if (projects != null)
+{
+    <table>
+        <thead>
+        <tr>
+            <th>Title</th>
+            <th>Preço</th>
+        </tr>
+        </thead>
+        <tbody>
+        @foreach (var project in projects)
+        {
+            <tr>
+                <td>@project.Name</td>
+                <td>@project.Pricehour</td>
+            </tr>
+        }
+        </tbody>
+    </table>
+}
+else
+{
+    <p>No projects found.</p>
+}
+
+<h3>Invite Freelancer</h3>
+
+<form @onsubmit="InviteFreelancer">
+    <div>
+        <label for="projectName">Project Name:</label>
+        <input type="text" id="projectName" @bind="projectName" />
+    </div>
+    <div>
+        <label for="userName">Freelancer Username:</label>
+        <input type="text" id="userName" @bind="userName" />
+    </div>
+    <button type="submit">Send Invite</button>
+</form>
+
+@code {
+    private List<Project> projects;
+    private User loggedUser;
+    private string projectName;
+    private string userName;
+
+    protected override async Task OnInitializedAsync()
+    {
+        loggedUser = await LoadUserProfile();
+        projects = await GetProjectsFromApi();
+    }
+
+    private async Task<User> LoadUserProfile()
+    {
+        var token = await JsRuntime.InvokeAsync<string>("localStorage.getItem", "token");
+        if (!string.IsNullOrEmpty(token))
+        {
+            // Decode the token
+            var jwtHandler = new JwtSecurityTokenHandler();
+            var jwtToken = jwtHandler.ReadJwtToken(token);
+
+            // Get the user ID from the token
+            var userIdClaim = jwtToken.Claims.FirstOrDefault(c => c.Type == "userId");
+            if (userIdClaim != null && Guid.TryParse(userIdClaim.Value, out Guid userId))
+            {
+                // Make HTTP request to get the user profile
+                var response = await HttpClient.GetAsync($"http://localhost:5052/api/Users/{userId}");
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var userProfile = await response.Content.ReadFromJsonAsync<User>();
+                    return userProfile;
+                }
+                else
+                {
+                    return new User();
+                }
+            }
+            else
+            {
+                return new User();
+            }
+        }
+        else
+        {
+            return new User();
+        }
+    }
+
+    private async Task SendMessageToConsole(string message)
+    {
+        await JsRuntime.InvokeVoidAsync("console.log", message);
+    }
+
+    private async Task<List<Project>> GetProjectsFromApi()
+    {
+        using (var httpClient = new HttpClient())
+        {
+            var aux = loggedUser.Userid;
+            await SendMessageToConsole("inside function: " + aux.ToString());
+            var response = await httpClient.GetAsync($"http://localhost:5052/api/Projects/user/{aux}");
+            if (response.IsSuccessStatusCode)
+            {
+                var content = await response.Content.ReadAsStringAsync();
+                try
+                {
+                    return JsonConvert.DeserializeObject<List<Project>>(content);
+                }
+                catch (JsonException)
+                {
+                    // Handle JSON parsing error
+                    // You can display an error message or log the error
+                }
+            }
+            else
+            {
+                // Handle non-success status code
+                // You can display an error message or log the error
+            }
+
+            return new List<Project>();
+        }
+    }
+
+    private async Task InviteFreelancer()
+    {
+        try
+        {
+            var project = projects.FirstOrDefault(p => p.Name == projectName);
+
+            if (project == null)
+            {
+                await JsRuntime.InvokeVoidAsync("alert", "Project not found.");
+                return;
+            }
+
+            var inviteResponse = await HttpClient.PostAsync($"http://localhost:5052/api/Invite?projectId={project.Projectid}&userName={userName}", null);
+
+            if (inviteResponse.IsSuccessStatusCode)
+            {
+                // Convite enviado com sucesso
+                // Atualize a lista de projetos ou faça alguma ação adequada
+                projects = await GetProjectsFromApi();
+                await JsRuntime.InvokeVoidAsync("alert", "Invite sent successfully!");
+            }
+            else if (inviteResponse.StatusCode == System.Net.HttpStatusCode.Conflict)
+            {
+                await JsRuntime.InvokeVoidAsync("alert", "Invite already sent to the freelancer.");
+            }
+            else
+            {
+                await JsRuntime.InvokeVoidAsync("alert", "An error occurred while sending the invite.");
+            }
+        }
+        catch (Exception ex)
+        {
+            await JsRuntime.InvokeVoidAsync("alert", $"An error occurred: {ex.Message}");
+        }
+    }
+}

@@ -2,9 +2,6 @@
 using BusinessLogic.Entities;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace Backend.Controllers
 {
@@ -22,39 +19,9 @@ namespace Backend.Controllers
         // GET: api/Projects
         // List all projects
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<dynamic>>> getProjects()
+        public async Task<ActionResult<IEnumerable<dynamic>>> GetProjects()
         {
-            return await _context.Projects.Select(p => new
-            {
-                p.Projectid,
-                p.Name,
-                p.Pricehour,
-                Client = new
-                {
-                    p.Client.Userid,
-                    p.Client.User.Displayname
-                },
-                Projectleader = new
-                {
-                    p.Projectleader.Userid,
-                    p.Projectleader.User.Displayname,
-                    p.Projectleader.Dailyavghours   
-                },
-                Freelancers = p.Freelancers.Select(f => new
-                {
-                    f.Userid,
-                    f.User.Displayname,
-                    f.Dailyavghours
-                }),
-                UserTasks = p.UserTasks.Select(t => new
-                {
-                    t.Taskid,
-                    t.Freelancer.User.Displayname,
-                    t.Startdate,
-                    t.Enddate,
-                    t.Pricehour
-                })
-            }).ToListAsync();
+            return await _context.Projects.ToListAsync();
         }
         
         // GET api/projects/{id}
@@ -62,168 +29,23 @@ namespace Backend.Controllers
         [HttpGet("{id}")]
         public IActionResult GetProjectById(Guid id)
         {
-            var p = _context.Projects
-                .Include(p => p.Freelancers)
-                .ThenInclude(f => f.User)
-                .Include(p => p.UserTasks)
-                .ThenInclude(t => t.Freelancer)
-                .ThenInclude(f => f.User)
-                .Include(p => p.Client)
-                .ThenInclude(c => c.User)
-                .FirstOrDefault(p => p.Projectid == id);
-    
-            if (p == null)
+            var project = _context.Projects.FirstOrDefault(p => p.Projectid == id);
+            if (project == null)
             {
                 return NotFound();
             }
-
-            var project = new
-            {
-                Projectid = p?.Projectid,
-                Name = p?.Name,
-                Pricehour = p?.Pricehour,
-                Client = new
-                {
-                    Userid = p?.Client?.Userid,
-                    Displayname = p?.Client?.User?.Displayname
-                },
-                Projectleader = new
-                {
-                    Userid = p?.Projectleader?.Userid,
-                    Displayname = p?.Projectleader?.User?.Displayname,
-                    Dailyavghours = p?.Projectleader?.Dailyavghours
-                },
-                Freelancers = p.Freelancers.Select(f => new
-                {
-                    Userid = f?.Userid,
-                    Displayname = f?.User?.Displayname,
-                    Dailyavghours = f?.Dailyavghours
-                }),
-                UserTasks = p.UserTasks.Select(t => new
-                {
-                    Taskid = t?.Taskid,
-                    Displayname = t?.Freelancer?.User?.Displayname,
-                    t?.Startdate,
-                    t?.Enddate,
-                    t?.Pricehour
-                })
-            };
-    
             return Ok(project);
         }
         
-        
-        // GET api/projects/{client}
-        // List specific project, based on client
-        [HttpGet("client/{client}")]
-        public IActionResult GetProjectByCli(Guid client)
+        // GET api/projects/user/{id}
+        // List all projects, based on user id
+        [HttpGet("user/{id:guid}")]
+        public async Task<ActionResult<IEnumerable<dynamic>>> GetProjectByUser(Guid id)
         {
-            var p = _context.Projects
-                .Include(p => p.Freelancers)
-                .ThenInclude(f => f.User)
-                .Include(p => p.UserTasks)
-                .ThenInclude(t => t.Freelancer)
-                .ThenInclude(f => f.User)
-                .Include(p => p.Client)
-                .ThenInclude(c => c.User)
-                .FirstOrDefault(p => p.Client.Userid == client);
-    
-            if (p == null)
-            {
-                return NotFound();
-            }
-
-            var project = new
-            {
-                Projectid = p?.Projectid,
-                Name = p?.Name,
-                Pricehour = p?.Pricehour,
-                Client = new
-                {
-                    Userid = p?.Client?.Userid,
-                    Displayname = p?.Client?.User?.Displayname
-                },
-                Projectleader = new
-                {
-                    Userid = p?.Projectleader?.Userid,
-                    Displayname = p?.Projectleader?.User?.Displayname,
-                    Dailyavghours = p?.Projectleader?.Dailyavghours
-                },
-                Freelancers = p.Freelancers.Select(f => new
-                {
-                    Userid = f?.Userid,
-                    Displayname = f?.User?.Displayname,
-                    Dailyavghours = f?.Dailyavghours
-                }),
-                UserTasks = p.UserTasks.Select(t => new
-                {
-                    Taskid = t?.Taskid,
-                    Displayname = t?.Freelancer?.User?.Displayname,
-                    t?.Startdate,
-                    t?.Enddate,
-                    t?.Pricehour
-                })
-            };
-    
-            return Ok(project);
+            return await _context.Projects
+                .Where(p => p.Projectleaderid == id || p.Clientid == id)
+                .ToListAsync();
         }
-        
-        
-        // GET api/projects/{freelancer}
-        // List specific project, based on freelancer
-        [HttpGet("freelancer/{freelancer}")]
-        public IActionResult GetProjectByFree(Guid freelancer)
-        {
-            var p = _context.Projects
-                .Include(p => p.Freelancers)
-                .ThenInclude(f => f.User)
-                .Include(p => p.UserTasks)
-                .ThenInclude(t => t.Freelancer)
-                .ThenInclude(f => f.User)
-                .Include(p => p.Client)
-                .ThenInclude(c => c.User)
-                .FirstOrDefault(p => p.Projectleaderid == freelancer || p.Freelancers.Any(f => f.Userid == freelancer));
-    
-            if (p == null)
-            {
-                return NotFound();
-            }
-
-            var project = new
-            {
-                Projectid = p?.Projectid,
-                Name = p?.Name,
-                Pricehour = p?.Pricehour,
-                Client = new
-                {
-                    Userid = p?.Client?.Userid,
-                    Displayname = p?.Client?.User?.Displayname
-                },
-                Projectleader = new
-                {
-                    Userid = p?.Projectleader?.Userid,
-                    Displayname = p?.Projectleader?.User?.Displayname,
-                    Dailyavghours = p?.Projectleader?.Dailyavghours
-                },
-                Freelancers = p.Freelancers.Select(f => new
-                {
-                    Userid = f?.Userid,
-                    Displayname = f?.User?.Displayname,
-                    Dailyavghours = f?.Dailyavghours
-                }),
-                UserTasks = p.UserTasks.Select(t => new
-                {
-                    Taskid = t?.Taskid,
-                    Displayname = t?.Freelancer?.User?.Displayname,
-                    t?.Startdate,
-                    t?.Enddate,
-                    t?.Pricehour
-                })
-            };
-    
-            return Ok(project);
-        }
-
         
         // PUT api/projects/{id}
         // Update db specific project, based on id
@@ -238,16 +60,14 @@ namespace Backend.Controllers
 
             // Update project properties
             project.Name = updatedProject.Name;
-            project.Clientid = updatedProject.Clientid;
             project.Projectleaderid = updatedProject.Projectleaderid;
+            project.Clientid = updatedProject.Clientid;
             project.Pricehour = updatedProject.Pricehour;
 
             _context.SaveChanges();
             return NoContent();
         }
-
         
-
         // POST api/projects
         // Creates a db entity of a project
         [HttpPost]

@@ -1,0 +1,209 @@
+﻿@page "/tasks"
+@using Newtonsoft.Json
+@layout MainLayout
+@using System.IdentityModel.Tokens.Jwt
+@using System.Text
+@using BusinessLogic.Entities
+@using BusinessLogic.Models
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JsRuntime
+@inject HttpClient HttpClient
+
+
+<head>
+    <link rel="stylesheet" href="tasks.css">
+</head>
+
+<PageTitle>Tasks</PageTitle>
+
+<h3>Tasks</h3>
+
+<a href="/addtask" class="create-project-btn">
+    <span class="icon">+</span> Create new task
+</a>
+
+<div>
+    <label for="startDate">Start Date:</label>
+    <input type="date" id="startDate" @bind="startDate" />
+</div>
+
+<div>
+    <label for="endDate">End Date:</label>
+    <input type="date" id="endDate" @bind="endDate" />
+</div>
+
+<button @onclick="ListTasksBetweenDates">List Tasks</button>
+
+@if (filteredTasks != null)
+{
+    <p>Number of tasks: @filteredTasks.Count</p>
+    <table>
+        <thead>
+            <tr>
+                <th>Title</th>
+                <th>Description</th>
+                <th>Start Date</th>
+                <th>End Date</th>
+                <th>Hourly Rate</th>
+                <th>Task duration</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var task in filteredTasks)
+            {
+                <tr>
+                    <td>@task.Title</td>
+                    <td>@task.Description</td>
+                    <td>@task.Startdate</td>
+                    <td>@task.Enddate</td>
+                    <td>@task.Pricehour</td>
+                    <td>@task.Duration</td>
+                    <td>
+                        @if (task.Enddate == null)
+                        {
+                            <button class="btn btn-danger" @onclick="() => EndTask(task)">End Task</button>
+                        }
+                        else
+                        {
+                            <span class="text-muted">Task Ended</span>
+                        }
+                    </td>
+                    <td>
+                        <button class="btn btn-danger" @onclick="() => RemoveTask(task.Taskid)">Remove Task</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+else
+{
+    <p>No tasks found.</p>
+}
+
+@code {
+    private List<UserTask> tasks;
+    private List<UserTask> filteredTasks;
+    private Guid loggedUser;
+    private DateTime startDate;
+    private DateTime endDate;
+
+    protected override async Task OnInitializedAsync()
+    {
+        loggedUser = await LoadUserProfile();
+        tasks = await GetTasksFromApi();
+        
+    // Inicializar startDate como a data atual menos um mês
+        startDate = DateTime.Now.AddMonths(-1);
+
+    // Inicializar endDate como a data atual
+        endDate = DateTime.Now;
+    }
+
+    private async Task<Guid> LoadUserProfile()
+    {
+        var token = await JsRuntime.InvokeAsync<string>("localStorage.getItem", "token");
+        if (!string.IsNullOrEmpty(token))
+        {
+            var jwtHandler = new JwtSecurityTokenHandler();
+            var jwtToken = jwtHandler.ReadJwtToken(token);
+            var userIdClaim = jwtToken.Claims.FirstOrDefault(c => c.Type == "userId");
+            if (userIdClaim != null && Guid.TryParse(userIdClaim.Value, out Guid userId))
+            {
+                var response = await HttpClient.GetAsync($"http://localhost:5052/api/Users/{userId}");
+                if (response.IsSuccessStatusCode)
+                {
+                    var userProfile = await response.Content.ReadFromJsonAsync<User>();
+                    return userProfile.Userid;
+                }
+                else
+                {
+                    return Guid.Empty;
+                }
+            }
+            else
+            {
+                return Guid.Empty;
+            }
+        }
+        else
+        {
+            return Guid.Empty;
+        }
+    }
+
+    private async Task<List<UserTask>> GetTasksFromApi()
+    {
+        var response = await HttpClient.GetAsync($"http://localhost:5052/api/UserTasks/user/{loggedUser}");
+        if (response.IsSuccessStatusCode)
+        {
+            var content = await response.Content.ReadAsStringAsync();
+            Console.WriteLine(content);
+            try
+            {
+                var allTasks = JsonConvert.DeserializeObject<List<UserTask>>(content);
+                return allTasks;
+            }
+            catch (JsonException ex)
+            {
+                Console.WriteLine(ex.ToString());
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.ToString());
+            }
+        }
+        else
+        {
+            Console.WriteLine(response.StatusCode.ToString());
+        }
+
+        return new List<UserTask>();
+    }
+
+    private async Task EndTask(UserTask task)
+    {
+        task.Enddate = DateTime.Now;
+
+        using (var httpClient = new HttpClient())
+        {
+            var json = JsonConvert.SerializeObject(task);
+            var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+            var response = await httpClient.PutAsync($"http://localhost:5052/api/UserTasks/{task.Taskid}", content);
+            if (response.IsSuccessStatusCode)
+            {
+                // Atualização bem-sucedida, recarrega as tarefas
+                tasks = await GetTasksFromApi();
+            }
+            else
+            {
+                // Handle error response here if needed
+            }
+        }
+    }
+
+    private async Task RemoveTask(Guid taskId)
+    {
+        using (var httpClient = new HttpClient())
+        {
+            var response = await httpClient.DeleteAsync($"http://localhost:5052/api/UserTasks/{taskId}");
+            if (response.IsSuccessStatusCode)
+            {
+                tasks.RemoveAll(t => t.Taskid == taskId);
+            }
+            else
+            {
+                // Handle error response here if needed
+            }
+        }
+    }
+
+    private void ListTasksBetweenDates()
+    {
+        filteredTasks = tasks.Where(task =>
+            task.Startdate >= startDate.Date &&
+            (task.Enddate == null || task.Enddate <= endDate.Date)
+            ).ToList();
+    }
+}

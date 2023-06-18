@@ -1,0 +1,193 @@
+﻿@page "/profile"
+@using System.IdentityModel.Tokens.Jwt
+@using System.Security.Claims
+@using BusinessLogic.Entities
+@using BusinessLogic.Models
+@layout MainLayout
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JsRuntime
+@inject HttpClient HttpClient
+
+<PageTitle>Profile</PageTitle>
+
+<head>
+    <link rel="stylesheet" href="profile.css">
+</head>
+
+<div class="container">
+    <h1 class="page-title">Profile</h1>
+
+    <div class="profile-container">
+        <div class="profile-section">
+            <h3>User Information</h3>
+
+            <div class="profile-picture">
+                <img src="images/profileimage.png" alt="Profile Picture">
+            </div>
+
+            <div class="form-group">
+                <label for="displayName">Display Name:</label>
+                <input id="displayName" type="text" class="form-control" @bind="@User.Displayname" />
+            </div>
+
+            <div class="form-group">
+                <label for="username">Username:</label>
+                <input id="username" type="text" class="form-control" @bind="@User.Username" />
+            </div>
+
+            <button class="btn btn-primary" @onclick="UpdateProfile">Save Profile</button>
+        </div>
+
+        <div class="profile-section">
+            <h3>Change Password</h3>
+
+            <div class="form-group">
+                <label for="currentPassword">Current Password:</label>
+                <input id="currentPassword" type="password" class="form-control" @bind="@CurrentPassword" />
+            </div>
+
+            <div class="form-group">
+                <label for="newPassword">New Password:</label>
+                <input id="newPassword" type="password" class="form-control" @bind="@NewPassword" />
+            </div>
+
+            <button class="btn btn-primary" @onclick="UpdatePassword">Change Password</button>
+        </div>
+
+        <div class="error-message">
+            @if (!string.IsNullOrEmpty(ErrorMessage))
+            {
+                <p>@ErrorMessage</p>
+            }
+        </div>
+    </div>
+</div>
+
+
+@code {
+    private UserEdit User { get; set; } = new UserEdit();
+    private Guid UserId { get; set; }
+    private string CurrentPassword { get; set; }
+    private string NewPassword { get; set; }
+    private string ErrorMessage { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadUserProfile();
+    }
+
+    private async Task LoadUserProfile()
+    {
+        var token = await JsRuntime.InvokeAsync<string>("localStorage.getItem", "token");
+        if (!string.IsNullOrEmpty(token))
+        {
+            // Descodificar o token
+            var jwtHandler = new JwtSecurityTokenHandler();
+            var jwtToken = jwtHandler.ReadJwtToken(token);
+
+            // Obter o ID do utilizador do token
+            var userIdClaim = jwtToken.Claims.FirstOrDefault(c => c.Type == "userId");
+            if (userIdClaim != null && Guid.TryParse(userIdClaim.Value, out Guid userId))
+            {
+                UserId = userId;
+
+                // Fazer solicitação HTTP para obter o perfil do utilizador
+                var response = await HttpClient.GetAsync($"http://localhost:5052/api/Users/{UserId}");
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var userProfile = await response.Content.ReadFromJsonAsync<User>();
+                    User.Displayname = userProfile?.Displayname ?? string.Empty;
+                    User.Username = userProfile?.Username ?? string.Empty;
+                }
+            }
+        }
+    }
+
+    private async Task UpdateProfile()
+    {
+        ErrorMessage = null;
+
+        var token = await JsRuntime.InvokeAsync<string>("localStorage.getItem", "token");
+        if (!string.IsNullOrEmpty(token))
+        {
+            // Descodificar token
+            var jwtHandler = new JwtSecurityTokenHandler();
+            var jwtToken = jwtHandler.ReadJwtToken(token);
+
+            // Obter as informações do utilizador do token 
+            var username = jwtToken.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value;
+
+            // Verificar se o novo nome de utilizador já existe
+            var checkUsernameResponse = await HttpClient.GetAsync($"http://localhost:5052/api/Users/checkusername/{User.Username}");
+            if (!checkUsernameResponse.IsSuccessStatusCode)
+            {
+                ErrorMessage = "Failed to check the availability of the username.";
+                return;
+            }
+            else
+            {
+                var isUsernameAvailable = await checkUsernameResponse.Content.ReadFromJsonAsync<bool>();
+                if (!isUsernameAvailable)
+                {
+                    ErrorMessage = "Username is already taken.";
+                    return;
+                }
+            }
+
+            // Fazer solicitação HTTP para atualizar o perfil do utilizador
+            var response = await HttpClient.PutAsJsonAsync($"http://localhost:5052/api/Users/edit/{username}", User);
+
+            if (response.IsSuccessStatusCode)
+            {
+                NavigationManager.NavigateTo("/profile");
+            }
+            else
+            {
+                ErrorMessage = "Failed to update the profile.";
+            }
+        }
+    }
+
+    private async Task UpdatePassword()
+    {
+        ErrorMessage = null;
+
+        var token = await JsRuntime.InvokeAsync<string>("localStorage.getItem", "token");
+        if (!string.IsNullOrEmpty(token))
+        {
+            // Descodificar token
+            var jwtHandler = new JwtSecurityTokenHandler();
+            var jwtToken = jwtHandler.ReadJwtToken(token);
+
+            // Obter as informações do utilizador do token 
+            var username = jwtToken.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value;
+
+            // Verificar se a nova palavra-passe tem pelo menos 6 caracteres
+            if (NewPassword.Length < 6)
+            {
+                ErrorMessage = "New password must have at least 6 characters.";
+                return;
+            }
+
+            // Construir o objeto para enviar a solicitação HTTP
+            var passwordUpdateModel = new PasswordUpdateModel
+            {
+                CurrentPassword = CurrentPassword,
+                NewPassword = NewPassword
+            };
+
+            // Fazer solicitação HTTP para atualizar a senha do utilizador
+            var response = await HttpClient.PutAsJsonAsync($"http://localhost:5052/api/Users/changepassword/{username}", passwordUpdateModel);
+
+            if (response.IsSuccessStatusCode) 
+            {
+                NavigationManager.NavigateTo("/profile");
+            }
+            else
+            {
+                ErrorMessage = "Failed to update the password.";
+            }
+        }
+    }
+}

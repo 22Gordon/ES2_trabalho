@@ -1,0 +1,128 @@
+@page "/register"
+@using Microsoft.AspNetCore.Components
+@using BusinessLogic.Models
+@inject HttpClient HttpClient
+@inject NavigationManager NavigationManager
+
+<head>
+    <link rel="stylesheet" href="register.css">
+</head>
+
+<body>
+    <div class="register">
+        <h3>Register</h3>
+
+        <div class="form-field">
+            <label for="displayname">Name:</label>
+            <input id="displayname" type="text" class="form-input" placeholder="Name" @bind="@DisplayName" />
+        </div>
+
+        <div class="form-field">
+            <label for="username">Username:</label>
+            <input id="username" type="text" class="form-input" placeholder="Username" @bind="@Username" />
+        </div>
+
+        <div class="form-field">
+            <label for="password">Password:</label>
+            <input id="password" type="password" class="form-input" placeholder="Password" @bind="@Password" />
+        </div>
+
+        <div class="form-field">
+            <label for="confirmPassword">Confirm Password:</label>
+            <input id="confirmPassword" type="password" class="form-input" placeholder="Confirm Password" @bind="@ConfirmPassword" />
+        </div>
+
+        <div class="form-field">
+            <select id="accountType" class="form-input" @bind="@AccountType">
+                <option value="client">Client</option>
+                <option value="freelancer">Freelancer</option>
+            </select>
+        </div>
+
+        <!-- Exibir mensagem de erro -->
+        @if (!string.IsNullOrEmpty(ErrorMessage))
+        {
+            <p class="error-message">@ErrorMessage</p>
+        }
+        @if (!string.IsNullOrEmpty(UsernameErrorMessage))
+                    {
+                        <p class="error-message">@UsernameErrorMessage</p>
+                    }
+
+        <button class="btn" @onclick="HandleRegister">Register</button>
+
+        <p>Already have an account? <a href="/login">Login</a></p>
+    </div>
+</body>
+
+
+@code {
+    private string DisplayName { get; set; }
+    private string Username { get; set; }
+    private string Password { get; set; }
+    private string ConfirmPassword { get; set; }
+    private string AccountType { get; set; } = "client";
+    private string ErrorMessage { get; set; }
+    private string UsernameErrorMessage { get; set; }
+
+    private async Task HandleRegister()
+    {
+        // Validar os campos e realizar a lógica de registo
+        if (Password != ConfirmPassword)
+        {
+            ErrorMessage = "Passwords do not match.";
+            return;
+        }
+
+        if (Password.Length < 6)
+        {
+            ErrorMessage = "Password should have at least 6 characters.";
+            return;
+        }
+
+        // Verificar disponibilidade do nome de utilizador
+        bool isUsernameAvailable = await CheckUsernameAvailability(Username);
+        if (!isUsernameAvailable)
+        {
+            UsernameErrorMessage = "Username is already taken.";
+            return;
+        }
+
+        // Criar objeto User com os dados do formulário
+        var user = new UserRegistrationModel()
+        {
+            DisplayName = DisplayName,
+            Username = Username,
+            Password = Password
+        };
+
+        // Lógica de registo
+        switch (AccountType)
+        {
+            case "client":
+                // Criar conta de cliente
+                var response1 = await HttpClient.PostAsJsonAsync("http://localhost:5052/api/Clients/Register", user);
+                NavigationManager.NavigateTo("/login");
+                break;
+            case "freelancer":
+                // Criar conta de freelancer
+                var response2 = await HttpClient.PostAsJsonAsync("http://localhost:5052/api/Freelancers/Register", user);
+                NavigationManager.NavigateTo("/login");
+                break;
+        }
+    }
+
+    private async Task<bool> CheckUsernameAvailability(string username)
+    {
+        var response = await HttpClient.GetAsync($"http://localhost:5052/api/Users/CheckUsername/{username}");
+        if (response.IsSuccessStatusCode)
+        {
+            var isAvailable = await response.Content.ReadFromJsonAsync<bool>();
+            return isAvailable;
+        }
+        else
+        {
+            return false;
+        }
+    }
+}

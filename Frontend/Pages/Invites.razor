@@ -1,0 +1,152 @@
+@page "/invites"
+@layout MainLayout
+@using BusinessLogic.Models
+@using Newtonsoft.Json
+@using System.IdentityModel.Tokens.Jwt
+@using System.Text
+@inject IJSRuntime JsRuntime
+
+
+<head>
+    <link rel="stylesheet" href="invites.css">
+</head>
+
+
+<h3>Invites</h3>
+
+@if (inviteViewModels != null && inviteViewModels.Any())
+{
+    <table class="invites-table">
+        <thead>
+        <tr>
+            <th>Projeto</th>
+            <th>Status</th>
+            <th>Aceitar Convite</th>
+        </tr>
+        </thead>
+        <tbody>
+        @foreach (var inviteViewModel in inviteViewModels)
+        {
+            <tr>
+                <td>@inviteViewModel.ProjectName</td>
+                <td>@(inviteViewModel.IsAccepted ? "Accepted" : "Not accepted")</td>
+                <td>
+                    @if (!inviteViewModel.IsAccepted)
+                    {
+                        <button class="accept-button" @onclick="() => AcceptInvite(inviteViewModel)">Accept</button>
+                    }
+                </td>
+            </tr>
+        }
+        </tbody>
+    </table>
+}
+else
+{
+    <p>No invites found.</p>
+}
+
+@code {
+    private List<InviteViewModel> inviteViewModels;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await RefreshInvites();
+    }
+
+    private async Task RefreshInvites()
+    {
+        inviteViewModels = await GetInvitesFromApi();
+    }
+
+    private async Task<List<InviteViewModel>> GetInvitesFromApi()
+    {
+        var userId = await LoadUserProfile();
+
+        if (userId != Guid.Empty)
+        {
+            using (var httpClient = new HttpClient())
+            {
+                var response = await httpClient.GetAsync($"http://localhost:5052/api/Invite/user/{userId}");
+                if (response.IsSuccessStatusCode)
+                {
+                    var content = await response.Content.ReadAsStringAsync();
+                    try
+                    {
+                        return JsonConvert.DeserializeObject<List<InviteViewModel>>(content);
+                    }
+                    catch (JsonException)
+                    {
+                        ShowErrorMessage("Error parsing invite data.");
+                    }
+                }
+                else
+                {
+                    ShowErrorMessage($"Error retrieving invites. Status code: {response.StatusCode}");
+                }
+            }
+        }
+        else
+        {
+            ShowErrorMessage("Invalid user ID.");
+        }
+
+        return new List<InviteViewModel>();
+    }
+
+    private async Task<Guid> LoadUserProfile()
+    {
+        var token = await JsRuntime.InvokeAsync<string>("localStorage.getItem", "token");
+        if (!string.IsNullOrEmpty(token))
+        {
+            var jwtHandler = new JwtSecurityTokenHandler();
+            var jwtToken = jwtHandler.ReadJwtToken(token);
+            var userIdClaim = jwtToken.Claims.FirstOrDefault(c => c.Type == "userId");
+            if (userIdClaim != null && Guid.TryParse(userIdClaim.Value, out Guid userId))
+            {
+                return userId;
+            }
+            else
+            {
+                ShowErrorMessage("Invalid user ID claim in JWT.");
+            }
+        }
+        else
+        {
+            ShowErrorMessage("Token not found in local storage.");
+        }
+
+        return Guid.Empty;
+    }
+
+    private async Task AcceptInvite(InviteViewModel inviteViewModel)
+    {
+        var userId = await LoadUserProfile();
+
+        if (userId != Guid.Empty)
+        {
+            using (var httpClient = new HttpClient())
+            {
+                var acceptInviteModel = new AcceptInviteModel
+                {
+                    UserId = userId,
+                    ProjectTitle = inviteViewModel.ProjectName
+                };
+
+                var json = JsonConvert.SerializeObject(acceptInviteModel);
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+                var response = await httpClient.PostAsync("http://localhost:5052/api/Invite/accept", content);
+                await RefreshInvites();
+            }
+        }
+        else
+        {
+            ShowErrorMessage("Invalid user ID.");
+        }
+    }
+    private void ShowErrorMessage(string message)
+    {
+        Console.WriteLine($"Error: {message}");
+    }
+}
