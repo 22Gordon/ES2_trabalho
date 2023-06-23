@@ -46,6 +46,20 @@ namespace Backend.Controllers
             }
             return Ok(task);
         }
+        
+        // GET api/usertasks/project/{id}
+        // List specific user tasks, based on id
+        [HttpGet("project/{id}")]
+        public async Task<ActionResult<IEnumerable<dynamic>>> GetUserTaskByProjectId(Guid id)
+        {
+            List<Guid> list = _context.Taskprojects
+                .Where(tp => tp.Projectid == id)
+                .Select(tp => tp.Taskid).ToList();
+
+            return await _context.UserTasks
+                .Where(t => list.Contains(t.Taskid))
+                .ToListAsync();
+        }
 
         // PUT api/usertasks/{id}
         // Update db specific user task, based on id

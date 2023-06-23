@@ -12,11 +12,11 @@ namespace Backend.Controllers
     [Route("api/[controller]")]
     public class InviteController : ControllerBase
     {
-        private readonly TasksDbContext _dbContext;
+        private readonly TasksDbContext _context;
 
-        public InviteController(TasksDbContext dbContext)
+        public InviteController(TasksDbContext context)
         {
-            _dbContext = dbContext;
+            _context = context;
         }
 
         [HttpPost]
@@ -25,7 +25,7 @@ namespace Backend.Controllers
             try
             {
                 // Verificar se o projeto existe
-                var project = await _dbContext.Projects.FindAsync(projectId);
+                var project = await _context.Projects.FindAsync(projectId);
 
                 if (project == null)
                 {
@@ -33,14 +33,14 @@ namespace Backend.Controllers
                 }
 
                 // Verificar se o utilizador existe como freelancer
-                var freelancer = await _dbContext.Freelancers
+                var freelancer = await _context.Freelancers
                     .Include(f => f.User)
                     .FirstOrDefaultAsync(f => f.User.Username == userName);
 
                 if (freelancer != null)
                 {
                     // Verificar se o convite já existe para o projeto e freelancer
-                    var existingInvite = await _dbContext.Invites
+                    var existingInvite = await _context.Invites
                         .FirstOrDefaultAsync(invite => invite.Projectid == projectId && invite.Freelancerid == freelancer.Userid);
 
                     if (existingInvite != null)
@@ -55,8 +55,8 @@ namespace Backend.Controllers
                         Freelancerid = freelancer.Userid
                     };
 
-                    _dbContext.Invites.Add(invite);
-                    await _dbContext.SaveChangesAsync();
+                    _context.Invites.Add(invite);
+                    await _context.SaveChangesAsync();
 
                     return Ok();
                 }
@@ -75,7 +75,7 @@ namespace Backend.Controllers
         {
             try
             {
-                var invites = await _dbContext.Invites
+                var invites = await _context.Invites
                     .Include(invite => invite.Project)
                     .Include(invite => invite.Freelancer)
                     .ThenInclude(freelancer => freelancer.User)
@@ -96,19 +96,28 @@ namespace Backend.Controllers
             }
         }
         
+        [HttpGet("project/{pid}")]
+        public async Task<ActionResult<IEnumerable<dynamic>>> GetInvitesByProject(Guid pid)
+        {
+            return await _context.Invites
+                .Where(i => i.Projectid == pid)
+                .ToListAsync();
+
+        }
+        
         [HttpPost("accept")]
         public async Task<IActionResult> AcceptInvite(AcceptInviteModel model)
         {
             try
             {
-                var invite = await _dbContext.Invites
-                    .Include(invite => invite.Project)
-                    .SingleOrDefaultAsync(invite => invite.Project.Name == model.ProjectTitle);
+                var invite =  _context.Invites
+                    .Include(i => i.Project)
+                    .FirstOrDefault(i => i.Project.Name == model.ProjectTitle && i.Freelancerid == model.UserId);
 
                 if (invite != null && !invite.Isaccepted)
                 {
                     invite.Isaccepted = true;
-                    await _dbContext.SaveChangesAsync();
+                    await _context.SaveChangesAsync();
                     return Ok();
                 }
                 else
@@ -120,6 +129,20 @@ namespace Backend.Controllers
             {
                 return StatusCode(500, ex.Message);
             }
+        }
+        
+        [HttpDelete("{pid}/{fid}")]
+        public IActionResult RemoveInvite(Guid pid, Guid fid)
+        {
+            var inv = _context.Invites.FirstOrDefault(i => i.Projectid == pid && i.Freelancerid == fid);
+            if (inv == null)
+            {
+                return NotFound();
+            }
+
+            _context.Invites.Remove(inv);
+            _context.SaveChanges();
+            return NoContent();
         }
 
     }

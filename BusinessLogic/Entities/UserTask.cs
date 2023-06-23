@@ -27,5 +27,5 @@ public partial class UserTask
 
     public virtual Freelancer? Freelancer { get; set; }
 
-    public virtual ICollection<Project> Projects { get; set; } = new List<Project>();
+    public virtual ICollection<Taskproject> Taskprojects { get; set; } = new List<Taskproject>();
 }
