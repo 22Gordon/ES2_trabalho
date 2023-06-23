@@ -9,11 +9,18 @@
 @inject IJSRuntime JsRuntime
 @inject HttpClient HttpClient
 
+
+<head>
+    <link rel="stylesheet" href="tasks.css">
+</head>
+
 <PageTitle>Tasks</PageTitle>
 
-<a href="/addtask">Create a new task</a>
-
 <h3>Tasks</h3>
+
+<a href="/addtask" class="create-project-btn">
+    <span class="icon">+</span> Create new task
+</a>
 
 <div>
     <label for="startDate">Start Date:</label>
