@@ -24,13 +24,15 @@ public partial class TasksDbContext : DbContext
 
     public virtual DbSet<Project> Projects { get; set; }
 
+    public virtual DbSet<Taskproject> Taskprojects { get; set; }
+
     public virtual DbSet<User> Users { get; set; }
 
     public virtual DbSet<UserTask> UserTasks { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
 #warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see http://go.microsoft.com/fwlink/?LinkId=723263.
-        => optionsBuilder.UseNpgsql("Host=localhost:15432;Database=es2;Username=es2;Password=es2");
+        => optionsBuilder.UseNpgsql("Host=localhost:15432;Database=es2;Username=es2;Password=es2;");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -118,6 +120,27 @@ public partial class TasksDbContext : DbContext
                 .HasConstraintName("project_projectleaderid_fkey");
         });
 
+        modelBuilder.Entity<Taskproject>(entity =>
+        {
+            entity.HasKey(e => new { e.Taskid, e.Projectid }).HasName("taskproject_pkey");
+
+            entity.ToTable("taskproject");
+
+            entity.Property(e => e.Taskid).HasColumnName("taskid");
+            entity.Property(e => e.Projectid).HasColumnName("projectid");
+            entity.Property(e => e.AuxColumn).HasColumnName("aux_column");
+
+            entity.HasOne(d => d.Project).WithMany(p => p.Taskprojects)
+                .HasForeignKey(d => d.Projectid)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("taskproject_projectid_fkey");
+
+            entity.HasOne(d => d.Task).WithMany(p => p.Taskprojects)
+                .HasForeignKey(d => d.Taskid)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("taskproject_taskid_fkey");
+        });
+
         modelBuilder.Entity<User>(entity =>
         {
             entity.HasKey(e => e.Userid).HasName("users_pkey");
@@ -165,25 +188,6 @@ public partial class TasksDbContext : DbContext
             entity.HasOne(d => d.Freelancer).WithMany(p => p.UserTasks)
                 .HasForeignKey(d => d.Freelancerid)
                 .HasConstraintName("user_task_freelancerid_fkey");
-
-            entity.HasMany(d => d.Projects).WithMany(p => p.Tasks)
-                .UsingEntity<Dictionary<string, object>>(
-                    "Taskproject",
-                    r => r.HasOne<Project>().WithMany()
-                        .HasForeignKey("Projectid")
-                        .OnDelete(DeleteBehavior.ClientSetNull)
-                        .HasConstraintName("taskproject_projectid_fkey"),
-                    l => l.HasOne<UserTask>().WithMany()
-                        .HasForeignKey("Taskid")
-                        .OnDelete(DeleteBehavior.ClientSetNull)
-                        .HasConstraintName("taskproject_taskid_fkey"),
-                    j =>
-                    {
-                        j.HasKey("Taskid", "Projectid").HasName("taskproject_pkey");
-                        j.ToTable("taskproject");
-                        j.IndexerProperty<Guid>("Taskid").HasColumnName("taskid");
-                        j.IndexerProperty<Guid>("Projectid").HasColumnName("projectid");
-                    });
         });
 
         OnModelCreatingPartial(modelBuilder);

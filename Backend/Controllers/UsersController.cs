@@ -42,6 +42,34 @@ namespace Backend.Controllers
 
             return user;
         }
+        
+        // GET: api/Users/project/5
+        [HttpGet("project/{pid}")]
+        public async Task<ActionResult<IEnumerable<dynamic>>> GetUsersFromProject(Guid pid)
+        {
+            var list = _context.Invites
+                .Where(i => i.Projectid == pid && i.Isaccepted)
+                .Select(i => i.Freelancerid)
+                .ToList();
+
+            var project = _context.Projects.Where(p => p.Projectid == pid).Select(p => p).ToList();
+            var p = project[0];
+            if (p != null)
+            {
+                if (p.Clientid != null)
+                {
+                    list.Insert(0, (Guid)p.Clientid);
+                }
+                if (p.Projectleaderid != null)
+                {
+                    list.Insert(0, (Guid)p.Projectleaderid);
+                }
+            }
+
+            return await _context.Users
+                .Where(u => list.Contains(u.Userid))
+                .ToListAsync();
+        }
 
         // PUT: api/Users/5
         [HttpPut("{id}")]

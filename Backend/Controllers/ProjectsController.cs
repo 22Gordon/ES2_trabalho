@@ -42,8 +42,12 @@ namespace Backend.Controllers
         [HttpGet("user/{id:guid}")]
         public async Task<ActionResult<IEnumerable<dynamic>>> GetProjectByUser(Guid id)
         {
+            List<Guid> list = _context.Invites
+                .Where(i => i.Freelancerid == id && i.Isaccepted)
+                .Select(i => i.Projectid).ToList();
+            
             return await _context.Projects
-                .Where(p => p.Projectleaderid == id || p.Clientid == id)
+                .Where(p => p.Projectleaderid == id || p.Clientid == id || list.Contains(p.Projectid))
                 .ToListAsync();
         }
         
@@ -80,18 +84,81 @@ namespace Backend.Controllers
         
         // DELETE api/projects/{id}
         // Deletes an entity from the database
-        [HttpDelete("{id}")]
-        public IActionResult DeleteProject(Guid id)
+        [HttpDelete("{pid}/{b}")]
+        public IActionResult DeleteProject(Guid pid, Boolean b)
         {
-            var project = _context.Projects.FirstOrDefault(p => p.Projectid == id);
-            if (project == null)
+            if (b)
             {
-                return NotFound();
-            }
+                var project = _context.Projects.FirstOrDefault(p => p.Projectid == pid);
+                if (project == null)
+                {
+                    return NotFound();
+                }
+                
+                List<Guid> list = _context.Taskprojects
+                    .Where(tp => tp.Projectid == pid)
+                    .Select(tp => tp.Taskid)
+                    .ToList();
 
-            _context.Projects.Remove(project);
-            _context.SaveChanges();
-            return NoContent();
+                List<Guid> invList = _context.Invites
+                    .Where(i => i.Projectid == pid)
+                    .Select(i => i.Freelancerid)
+                    .ToList();
+
+                var taskProjectController = new TaskProjectController(_context);
+                var userTaskController = new UserTasksController(_context);
+                var inviteController = new InviteController(_context);
+                
+                foreach (var tid in list)
+                {
+                    taskProjectController.RemoveTaskProject(pid, tid);
+                    userTaskController.DeleteUserTask(tid);
+                }
+
+                foreach (var fid in invList)
+                {
+                    inviteController.RemoveInvite(pid, fid);
+                }
+
+                _context.Projects.Remove(project);
+                _context.SaveChanges();
+                return Ok();
+            }
+            else
+            {
+                var project = _context.Projects.FirstOrDefault(p => p.Projectid == pid);
+                if (project == null)
+                {
+                    return NotFound();
+                }
+                
+                List<Guid> list = _context.Taskprojects
+                    .Where(tp => tp.Projectid == pid)
+                    .Select(tp => tp.Taskid)
+                    .ToList();
+
+                List<Guid> invList = _context.Invites
+                    .Where(i => i.Projectid == pid)
+                    .Select(i => i.Freelancerid)
+                    .ToList();
+
+                var taskProjectController = new TaskProjectController(_context);
+                var inviteController = new InviteController(_context);
+                
+                foreach (var tid in list)
+                {
+                    taskProjectController.RemoveTaskProject(pid, tid);
+                }
+
+                foreach (var fid in invList)
+                {
+                    inviteController.RemoveInvite(pid, fid);
+                }
+                
+                _context.Projects.Remove(project);
+                _context.SaveChanges();
+                return Ok();
+            }
         }
     }
 }

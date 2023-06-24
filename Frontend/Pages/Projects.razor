@@ -6,6 +6,7 @@
 @inject NavigationManager NavigationManager
 @inject IJSRuntime JsRuntime
 @inject HttpClient HttpClient
+@inject ILogger<AddTask> logger
 
 <head>
     <link rel="stylesheet" href="projects.css">
@@ -26,15 +27,68 @@
         <thead>
         <tr>
             <th>Title</th>
-            <th>Preço</th>
+            <th>Price</th>
+            <th>Tasks</th>
+            <th>Invited Users</th>
+            <th></th>
         </tr>
         </thead>
         <tbody>
-        @foreach (var project in projects)
+        @for (int i = 0; i < projects.Count; i++)
         {
+            var project = projects[i];
+            var taskList = tasks[i];
+            var userList = invites[i];
             <tr>
                 <td>@project.Name</td>
                 <td>@project.Pricehour</td>
+                <td>
+                    <ul>
+                        @foreach (var t in taskList)
+                        {
+                            <li>@t.Title - @t.Startdate</li>
+                        }
+                    </ul>
+                </td>
+                <td>
+                    <ul>
+                        @foreach (var u in userList)
+                        {
+                            @if (u.Userid == project.Projectleaderid)
+                            {
+                                <li>(Project Leader) @u.Displayname</li>
+                            }
+                        }
+                        @foreach (var u in userList)
+                        {
+                            if (u.Userid == project.Clientid)
+                            {
+                                <li>(Client) @u.Displayname</li>
+                            }
+                        }
+                        @foreach (var u in userList)
+                        {
+                            if (u.Userid != project.Projectleaderid && u.Userid != project.Clientid)
+                            {
+                                <li>
+                                    @u.Displayname
+                                    @if (loggedUser.Userid == project.Projectleaderid || loggedUser.Userid == project.Clientid)
+                                    {
+                                        <button class="btn btn-danger" 
+                                                @onclick="() => RemoveInvite(project.Projectid, u.Userid)">X</button>
+                                    }
+                                </li>
+                            }
+                        }
+                    </ul>
+                </td>
+                @if (project.Projectleaderid == loggedUser.Userid)
+                {
+                    <td>
+                        <button class="btn btn-danger" @onclick="() => RemoveProj(project.Projectid)">Delete Project</button>
+                        <button class="btn btn-danger" @onclick="() => RemoveProjAndTasks(project.Projectid)">Delete Project And Tasks</button>
+                    </td>
+                }
             </tr>
         }
         </tbody>
@@ -61,6 +115,8 @@ else
 
 @code {
     private List<Project> projects;
+    private List<List<UserTask>> tasks = new List<List<UserTask>>();
+    private List<List<User>> invites = new List<List<User>>();
     private User loggedUser;
     private string projectName;
     private string userName;
@@ -69,6 +125,15 @@ else
     {
         loggedUser = await LoadUserProfile();
         projects = await GetProjectsFromApi();
+
+        tasks = new List<List<UserTask>>(projects.Count);
+        invites = new List<List<User>>(projects.Count);
+
+        foreach (var project in projects)
+        {
+            tasks.Add(await GetTasksFromApi(project.Projectid));
+            invites.Add(await GetUsersFromApi(project.Projectid));
+        }
     }
 
     private async Task<User> LoadUserProfile()
@@ -142,6 +207,65 @@ else
             return new List<Project>();
         }
     }
+    
+    private async Task<List<UserTask>> GetTasksFromApi(Guid pid)
+    {
+        using (var httpClient = new HttpClient())
+        {
+            var response = await httpClient.GetAsync($"http://localhost:5052/api/UserTasks/project/{pid}");
+            if (response.IsSuccessStatusCode)
+            {
+                var content = await response.Content.ReadAsStringAsync();
+                try
+                {
+                    return JsonConvert.DeserializeObject<List<UserTask>>(content);
+                }
+                catch (JsonException)
+                {
+                    // Handle JSON parsing error
+                    // You can display an error message or log the error
+                }
+            }
+            else
+            {
+                // Handle non-success status code
+                // You can display an error message or log the error
+            }
+
+            return new List<UserTask>();
+        }
+    }
+    
+    private async Task<List<User>> GetUsersFromApi(Guid pid)
+    {
+        using (var httpClient = new HttpClient())
+        {
+            var aux = loggedUser.Userid;
+            await SendMessageToConsole("inside function: " + aux.ToString());
+            var response = await httpClient.GetAsync($"http://localhost:5052/api/Users/project/{pid}");
+            if (response.IsSuccessStatusCode)
+            {
+                var content = await response.Content.ReadAsStringAsync();
+                logger.LogInformation("content = " + content);
+                try
+                {
+                    return JsonConvert.DeserializeObject<List<User>>(content);
+                }
+                catch (JsonException)
+                {
+                    // Handle JSON parsing error
+                    // You can display an error message or log the error
+                }
+            }
+            else
+            {
+                // Handle non-success status code
+                // You can display an error message or log the error
+            }
+
+            return new List<User>();
+        }
+    }
 
     private async Task InviteFreelancer()
     {
@@ -176,6 +300,63 @@ else
         catch (Exception ex)
         {
             await JsRuntime.InvokeVoidAsync("alert", $"An error occurred: {ex.Message}");
+        }
+    }
+    
+    private async Task RemoveProj(Guid pid)
+    {
+        using (var httpClient = new HttpClient())
+        {
+            logger.LogInformation($"link == http://localhost:5052/api/Projects/{pid}/{false}");
+            var response = await httpClient.DeleteAsync($"http://localhost:5052/api/Projects/{pid}/{false}");
+            logger.LogInformation("response: " + response);
+            if (response.IsSuccessStatusCode)
+            {
+                projects.RemoveAll(p => p.Projectid == pid);
+            }
+            else
+            {
+                logger.LogInformation("Something went wrong.");
+            }
+        }
+    }
+    
+    private async Task RemoveProjAndTasks(Guid pid)
+    {
+        using (var httpClient = new HttpClient())
+        {
+            logger.LogInformation($"link == http://localhost:5052/api/Projects/{pid}/{true}");
+            var response = await httpClient.DeleteAsync($"http://localhost:5052/api/Projects/{pid}/{true}");
+            logger.LogInformation("response: " + response);
+            if (response.IsSuccessStatusCode)
+            {
+                projects.RemoveAll(p => p.Projectid == pid);
+            }
+            else
+            {
+                logger.LogInformation("Something went wrong.");
+            }
+        }
+    }
+
+    private async Task RemoveInvite(Guid pid, Guid fid)
+    {
+        using (var httpClient = new HttpClient())
+        {
+            logger.LogInformation($"link == http://localhost:5052/api/Invite/{pid}/{fid}");
+            var response = await httpClient.DeleteAsync($"http://localhost:5052/api/Invite/{pid}/{fid}");
+            logger.LogInformation("response: " + response);
+            if (response.IsSuccessStatusCode)
+            {
+                foreach (var la in invites)
+                {
+                    la.RemoveAll(la => la.Userid == fid);
+                }
+            }
+            else
+            {
+                logger.LogInformation("Something went wrong.");
+            }
         }
     }
 }
