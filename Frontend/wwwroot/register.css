@@ -26,17 +26,15 @@ body {
 }
 
 .register .form-field {
-    position: relative;
     margin-bottom: 20px;
 }
 
 .register label {
-    position: absolute;
-    top: 50%;
-    left: 10px;
-    transform: translateY(-50%);
+    display: block;
+    margin-bottom: 5px;
     color: #136a8a;
     font-size: 1em;
+    text-align: left;
 }
 
 .register input,
@@ -47,24 +45,7 @@ body {
     border: 1px solid #136a8a;
     outline: none;
     font-size: 1em;
-}
-
-.register input::placeholder,
-.register select::placeholder {
-    color: transparent;
-}
-
-.register input::-webkit-input-placeholder,
-.register select::-webkit-input-placeholder {
-    color: transparent;
-}
-
-.register .form-field .fa {
-    position: absolute;
-    top: 50%;
-    left: 10px;
-    transform: translateY(-50%);
-    color: #136a8a;
+    margin-top: 5px;
 }
 
 .register .btn {
