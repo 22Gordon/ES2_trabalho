@@ -23,7 +23,7 @@
                 @foreach (var projectLeader in projectLeaders)
                 {
                     <option value="@projectLeader.Userid">
-                        @projectLeader.Userid
+                        @projectLeader.User?.Displayname
                     </option>
                 }
             </select>
@@ -139,12 +139,36 @@
             if (response.IsSuccessStatusCode)
             {
                 var content = await response.Content.ReadAsStringAsync();
-                return JsonConvert.DeserializeObject<List<Freelancer>>(content);
+                var freelancers = JsonConvert.DeserializeObject<List<Freelancer>>(content);
+
+                // Incluir o objeto User para cada freelancer
+                foreach (var freelancer in freelancers)
+                {
+                    freelancer.User = await GetUserFromApi(freelancer.Userid);
+                }
+
+                return freelancers;
             }
             else
             {
-                // Handle error response here if needed
                 return new List<Freelancer>();
+            }
+        }
+    }
+    
+    private async Task<User> GetUserFromApi(Guid userId)
+    {
+        using (var httpClient = new HttpClient())
+        {
+            var response = await httpClient.GetAsync($"http://localhost:5052/api/Users/{userId}");
+            if (response.IsSuccessStatusCode)
+            {
+                var content = await response.Content.ReadAsStringAsync();
+                return JsonConvert.DeserializeObject<User>(content);
+            }
+            else
+            {
+                return null;
             }
         }
     }
