@@ -130,7 +130,7 @@ else
         invites = new List<List<User>>(projects.Count);
 
         foreach (var project in projects)
-        {
+        {;
             tasks.Add(await GetTasksFromApi(project.Projectid));
             invites.Add(await GetUsersFromApi(project.Projectid));
         }
